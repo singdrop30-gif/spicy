@@ -1,7 +1,3 @@
--- ==========================================
--- 💖 JINGHOK HUB | Steal An Egg
--- ==========================================
-
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
