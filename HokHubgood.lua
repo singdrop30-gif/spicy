@@ -1,6 +1,5 @@
 -- ==========================================
 -- 💖 JINGHOK HUB | Steal An Egg
--- ✅ ចម្លងពី Chilli Hub → ប្តូរឈ្មោះ + អក្សរខ្មែរ
 -- ==========================================
 
 local Players = game:GetService("Players")
