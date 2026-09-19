@@ -1,285 +1,193 @@
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local RS = game:GetService("RunService")
 local WS = game:GetService("Workspace")
-local TweenService = game:GetService("TweenService")
+local Tween = game:GetService("TweenService")
 local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
+local Gui = Player:WaitForChild("PlayerGui")
 
--- UI Colors
-local UI = {
-    MainBG = Color3.fromRGB(30, 30, 45),
-    Accent = Color3.fromRGB(255, 0, 140),
-    Green = Color3.fromRGB(40, 180, 40),
-    Red = Color3.fromRGB(180, 0, 0),
-    Gray = Color3.fromRGB(60, 60, 80),
-    Text = Color3.new(1, 1, 1)
-}
-
--- State
-local State = {
-    AutoSteal = false,
-    SortByValue = true,
-    TweenSpeed = 1000,
-    ESP_Enabled = true,
-    IsMoving = false,
-    Target = nil
-}
-
--- Creature Data
+local UI = {BG=Color3.fromRGB(30,30,45), Accent=Color3.fromRGB(255,0,140), Green=Color3.fromRGB(40,180,40), Gray=Color3.fromRGB(60,60,80), Text=Color3.new(1,1,1)}
+local State = {Open=false, AutoSteal=false, Speed=1000, IsMoving=false}
 local Creatures = {
-    {Name = "Winged Lamb", Value = 1.3, Unit = "M/s", Rarity = "Common", Color = Color3.fromRGB(255, 230, 150)},
-    {Name = "Bladehide", Value = 753.7, Unit = "K/s", Rarity = "Rare", Color = Color3.fromRGB(80, 160, 220)},
-    {Name = "Cosmic Gecko", Value = 720.8, Unit = "K/s", Rarity = "Rare", Color = Color3.fromRGB(100, 80, 220)},
-    {Name = "Light Dove", Value = 557.3, Unit = "K/s", Rarity = "Common", Color = Color3.fromRGB(240, 240, 255)},
-    {Name = "Cosmic Gorilla", Value = 379.0, Unit = "K/s", Rarity = "Rare", Color = Color3.fromRGB(70, 90, 140)},
-    {Name = "Pure Jellyfish", Value = 950.0, Unit = "K/s", Rarity = "Legendary", Color = Color3.fromRGB(200, 100, 255)}
+    {Name="Winged Lamb", Val=1.3, Unit="M/s", Col=Color3.fromRGB(255,230,150)},
+    {Name="Bladehide", Val=753.7, Unit="K/s", Col=Color3.fromRGB(80,160,220)},
+    {Name="Cosmic Gecko", Val=720.8, Unit="K/s", Col=Color3.fromRGB(100,80,220)},
+    {Name="Light Dove", Val=557.3, Unit="K/s", Col=Color3.fromRGB(240,240,255)},
+    {Name="Cosmic Gorilla", Val=379.0, Unit="K/s", Col=Color3.fromRGB(70,90,140)},
+    {Name="Pure Jellyfish", Val=950.0, Unit="K/s", Col=Color3.fromRGB(200,100,255)}
 }
 
--- Screen Gui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "JinghokHub"
-ScreenGui.Parent = PlayerGui
+ScreenGui.Parent = Gui
 
--- Toggle Button
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(0, 55, 0, 55)
-ToggleBtn.Position = UDim2.new(0.015, 0, 0.5, -28)
-ToggleBtn.BackgroundColor3 = UI.Accent
-ToggleBtn.Text = "💖"
-ToggleBtn.TextColor3 = UI.Text
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.TextSize = 24
-ToggleBtn.Parent = ScreenGui
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 12)
+-- 💖 ប៊ូតុងនៅកណ្តាល
+local Btn = Instance.new("TextButton")
+Btn.Size = UDim2.new(0,70,0,70)
+Btn.Position = UDim2.new(0.5,-35,0.6,-35)
+Btn.BackgroundColor3 = UI.Accent
+Btn.Text = "💖"
+Btn.TextColor3 = UI.Text
+Btn.Font = Enum.Font.GothamBold
+Btn.TextSize = 30
+Btn.Parent = ScreenGui
+Instance.new("UICorner",Btn).CornerRadius = UDim.new(0,16)
 
--- Main Panel
+-- 📋 Panel
 local Panel = Instance.new("Frame")
-Panel.Name = "StealPanel"
-Panel.Size = UDim2.new(0, 420, 0, 520)
-Panel.Position = UDim2.new(0.07, 0, 0.5, -260)
-Panel.BackgroundColor3 = UI.MainBG
+Panel.Size = UDim2.new(0,420,0,520)
+Panel.Position = UDim2.new(0.5,-210,0.5,-260)
+Panel.BackgroundColor3 = UI.BG
 Panel.BorderSizePixel = 3
-Panel.BorderColor3 = UI.Red
+Panel.BorderColor3 = UI.Accent
 Panel.Visible = false
 Panel.Active = true
 Panel.Draggable = true
 Panel.Parent = ScreenGui
-Instance.new("UICorner", Panel).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner",Panel).CornerRadius = UDim.new(0,12)
 
--- Header
+-- ក្បាល
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 45)
-Header.BackgroundColor3 = UI.Red
+Header.Size = UDim2.new(1,0,0,50)
+Header.BackgroundColor3 = UI.Accent
 Header.Parent = Panel
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner",Header).CornerRadius = UDim.new(0,12)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0.55, 0, 1, 0)
-Title.Position = UDim2.new(0.03, 0, 0, 0)
+Title.Size = UDim2.new(1,0,1,0)
 Title.BackgroundTransparency = 1
 Title.Text = "💖 Jinghok Hub"
 Title.TextColor3 = UI.Text
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 20
+Title.TextSize = 22
 Title.Parent = Header
 
--- Sort Button
-local SortBtn = Instance.new("TextButton")
-SortBtn.Size = UDim2.new(0.35, -10, 0, 35)
-SortBtn.Position = UDim2.new(0.62, 0, 0.01, 0)
-SortBtn.BackgroundColor3 = UI.Green
-SortBtn.Text = "Sort: Value"
-SortBtn.TextColor3 = UI.Text
-SortBtn.Font = Enum.Font.GothamBold
-SortBtn.TextSize = 14
-SortBtn.Parent = Header
-Instance.new("UICorner", SortBtn).CornerRadius = UDim.new(0, 8)
-
--- Top Bar
-local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(0.94, 0, 0, 50)
-TopBar.Position = UDim2.new(0.03, 0, 0.11, 0)
-TopBar.BackgroundTransparency = 1
-TopBar.Parent = Panel
-
+-- Auto + Speed
 local AutoBtn = Instance.new("TextButton")
-AutoBtn.Size = UDim2.new(0.46, 0, 1, 0)
+AutoBtn.Size = UDim2.new(0.45,0,0,45)
+AutoBtn.Position = UDim2.new(0.05,0,0.13,0)
 AutoBtn.BackgroundColor3 = UI.Green
-AutoBtn.Text = "Auto Steal: ON"
+AutoBtn.Text = "🥚 Auto Steal: ON"
 AutoBtn.TextColor3 = UI.Text
 AutoBtn.Font = Enum.Font.GothamBold
 AutoBtn.TextSize = 14
-AutoBtn.Parent = TopBar
-Instance.new("UICorner", AutoBtn).CornerRadius = UDim.new(0, 8)
+AutoBtn.Parent = Panel
+Instance.new("UICorner",AutoBtn).CornerRadius = UDim.new(0,8)
 
-local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Size = UDim2.new(0.46, 0, 1, 0)
-SpeedLabel.Position = UDim2.new(0.51, 0, 0, 0)
-SpeedLabel.BackgroundColor3 = UI.Gray
-SpeedLabel.Text = "កម្លាំងរត់: 1000"
-SpeedLabel.TextColor3 = UI.Text
-SpeedLabel.Font = Enum.Font.GothamBold
-SpeedLabel.TextSize = 14
-SpeedLabel.Parent = TopBar
-Instance.new("UICorner", SpeedLabel).CornerRadius = UDim.new(0, 8)
+local SpeedLbl = Instance.new("TextLabel")
+SpeedLbl.Size = UDim2.new(0.45,0,0,45)
+SpeedLbl.Position = UDim2.new(0.50,0,0.13,0)
+SpeedLbl.BackgroundColor3 = UI.Gray
+SpeedLbl.Text = "⚡ កម្លាំងរត់: 1000"
+SpeedLbl.TextColor3 = UI.Text
+SpeedLbl.Font = Enum.Font.GothamBold
+SpeedLbl.TextSize = 14
+SpeedLbl.Parent = Panel
+Instance.new("UICorner",SpeedLbl).CornerRadius = UDim.new(0,8)
 
--- Speed Slider
-local SliderFrame = Instance.new("Frame")
-SliderFrame.Size = UDim2.new(0.94, 0, 0, 40)
-SliderFrame.Position = UDim2.new(0.03, 0, 0.22, 0)
-SliderFrame.BackgroundTransparency = 1
-SliderFrame.Parent = Panel
-
+-- Slider
 local SliderBg = Instance.new("Frame")
-SliderBg.Size = UDim2.new(1, 0, 0, 12)
-SliderBg.Position = UDim2.new(0, 0, 0.5, -6)
+SliderBg.Size = UDim2.new(0.90,0,0,14)
+SliderBg.Position = UDim2.new(0.05,0,0.24,0)
 SliderBg.BackgroundColor3 = UI.Gray
-SliderBg.Parent = SliderFrame
-Instance.new("UICorner", SliderBg).CornerRadius = UDim.new(0, 6)
+SliderBg.Parent = Panel
+Instance.new("UICorner",SliderBg).CornerRadius = UDim.new(0,7)
 
 local SliderFill = Instance.new("Frame")
-SliderFill.Size = UDim2.new(1, 0, 0, 12)
+SliderFill.Size = UDim2.new(1,0,1,0)
 SliderFill.BackgroundColor3 = UI.Accent
 SliderFill.Parent = SliderBg
-Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner",SliderFill).CornerRadius = UDim.new(0,7)
 
--- Creature List
-local ListContainer = Instance.new("ScrollingFrame")
-ListContainer.Size = UDim2.new(0.94, 0, 0.60, 0)
-ListContainer.Position = UDim2.new(0.03, 0, 0.34, 0)
-ListContainer.BackgroundTransparency = 1
-ListContainer.ScrollBarThickness = 6
-ListContainer.ScrollBarColor3 = UI.Gray
-ListContainer.Parent = Panel
+-- បញ្ជី
+local List = Instance.new("ScrollingFrame")
+List.Size = UDim2.new(0.90,0,0.60,0)
+List.Position = UDim2.new(0.05,0,0.35,0)
+List.BackgroundTransparency = 1
+List.ScrollBarThickness = 6
+List.Parent = Panel
 
--- Functions
-local function FlyToTarget(TargetPart)
-    if not TargetPart or State.IsMoving then return end
+local function FlyTo(Target)
+    if not Target or State.IsMoving then return end
     local Char = Player.Character
     if not Char or not Char:FindFirstChild("HumanoidRootPart") then return end
-    
     State.IsMoving = true
-    State.Target = TargetPart
-    
     local Root = Char.HumanoidRootPart
-    local StartPos = Root.Position
-    local EndPos = TargetPart.Position + Vector3.new(0, 3, 0)
-    local Distance = (EndPos - StartPos).Magnitude
-    local Duration = math.max(0.15, Distance / State.TweenSpeed)
-    
-    local TweenInfo = TweenInfo.new(Duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local Goal = {CFrame = CFrame.new(EndPos)}
-    local TweenObj = TweenService:Create(Root, TweenInfo, Goal)
-    TweenObj:Play()
-    
-    TweenObj.Completed:Connect(function()
-        State.IsMoving = false
-        State.Target = nil
-    end)
+    local EndPos = Target.Position + Vector3.new(0,3,0)
+    local Dist = (EndPos - Root.Position).Magnitude
+    local Dur = math.max(0.15, Dist / State.Speed)
+    Tween:Create(Root, TweenInfo.new(Dur), {CFrame=CFrame.new(EndPos)}):Play()
+    task.wait(Dur)
+    State.IsMoving = false
 end
 
-local function RefreshList()
-    ListContainer:ClearAllChildren()
+local function Refresh()
+    List:ClearAllChildren()
     local Layout = Instance.new("UIListLayout")
-    Layout.Padding = UDim.new(0, 8)
-    Layout.Parent = ListContainer
-    
-    local Sorted = {}
-    for _, c in ipairs(Creatures) do table.insert(Sorted, c) end
-    if State.SortByValue then
-        table.sort(Sorted, function(a, b) return a.Value > b.Value end)
-    end
-    
-    for i, Creature in ipairs(Sorted) do
+    Layout.Padding = UDim.new(0,6)
+    Layout.Parent = List
+    for _, C in ipairs(Creatures) do
         local Item = Instance.new("Frame")
-        Item.Size = UDim2.new(1, 0, 0, 55)
+        Item.Size = UDim2.new(1,0,0,55)
         Item.BackgroundColor3 = UI.Gray
-        Item.Parent = ListContainer
-        Instance.new("UICorner", Item).CornerRadius = UDim.new(0, 8)
+        Item.Parent = List
+        Instance.new("UICorner",Item).CornerRadius = UDim.new(0,8)
         
-        local NameLbl = Instance.new("TextLabel")
-        NameLbl.Size = UDim2.new(0.45, 0, 0, 28)
-        NameLbl.Position = UDim2.new(0.03, 0, 0, 2)
-        NameLbl.BackgroundTransparency = 1
-        NameLbl.Text = Creature.Name
-        NameLbl.TextColor3 = Creature.Color
-        NameLbl.Font = Enum.Font.GothamBold
-        NameLbl.TextSize = 13
-        NameLbl.TextXAlignment = Enum.TextXAlignment.Left
-        NameLbl.Parent = Item
+        local Name = Instance.new("TextLabel")
+        Name.Size = UDim2.new(0.55,0,1,0)
+        Name.Position = UDim2.new(0.03,0,0,0)
+        Name.BackgroundTransparency = 1
+        Name.Text = C.Name.."  $"..C.Val..C.Unit
+        Name.TextColor3 = C.Col
+        Name.Font = Enum.Font.GothamBold
+        Name.TextSize = 13
+        Name.TextXAlignment = Enum.TextXAlignment.Left
+        Name.Parent = Item
         
-        local ValueLbl = Instance.new("TextLabel")
-        ValueLbl.Size = UDim2.new(0.20, 0, 0, 22)
-        ValueLbl.Position = UDim2.new(0.03, 0, 0.52, 0)
-        ValueLbl.BackgroundTransparency = 1
-        ValueLbl.Text = "$" .. Creature.Value .. Creature.Unit
-        ValueLbl.TextColor3 = Color3.fromRGB(255, 215, 0)
-        ValueLbl.Font = Enum.Font.Gotham
-        ValueLbl.TextSize = 11
-        ValueLbl.TextXAlignment = Enum.TextXAlignment.Left
-        ValueLbl.Parent = Item
+        local Go = Instance.new("TextButton")
+        Go.Size = UDim2.new(0.35,0,0,45)
+        Go.Position = UDim2.new(0.62,0,0.08,0)
+        Go.BackgroundColor3 = UI.Green
+        Go.Text = "✅ រើស"
+        Go.TextColor3 = UI.Text
+        Go.Font = Enum.Font.GothamBold
+        Go.TextSize = 14
+        Go.Parent = Item
+        Instance.new("UICorner",Go).CornerRadius = UDim.new(0,8)
         
-        local StealBtn = Instance.new("TextButton")
-        StealBtn.Size = UDim2.new(0.25, 0, 0, 40)
-        StealBtn.Position = UDim2.new(0.72, 0, 0.13, 0)
-        StealBtn.BackgroundColor3 = UI.Green
-        StealBtn.Text = "Steal"
-        StealBtn.TextColor3 = UI.Text
-        StealBtn.Font = Enum.Font.GothamBold
-        StealBtn.TextSize = 13
-        StealBtn.Parent = Item
-        Instance.new("UICorner", StealBtn).CornerRadius = UDim.new(0, 8)
-        
-        StealBtn.MouseButton1Click:Connect(function()
+        Go.MouseButton1Click:Connect(function()
             local Found = nil
             for _, v in pairs(WS:GetDescendants()) do
-                if v:IsA("BasePart") and string.find(string.lower(v.Name), string.lower(Creature.Name)) then
-                    Found = v
-                    break
+                if v:IsA("BasePart") and string.find(string.lower(v.Name), string.lower(C.Name)) then
+                    Found = v; break
                 end
             end
-            if Found then
-                FlyToTarget(Found)
-                StealBtn.Text = "Going!"
-                task.delay(1.5, function() StealBtn.Text = "Steal" end)
-            else
-                StealBtn.Text = "Not Found"
-                task.delay(1.5, function() StealBtn.Text = "Steal" end)
-            end
+            if Found then FlyTo(Found); Go.Text = "✅ ទៅហើយ!"; task.delay(1.5,function()Go.Text="✅ រើស"end)
+            else Go.Text = "❌ រកមិនឃើញ"; task.delay(1.5,function()Go.Text="✅ រើស"end) end
         end)
     end
 end
 
--- Toggle Panel
-ToggleBtn.MouseButton1Click:Connect(function()
-    Panel.Visible = not Panel.Visible
-    if Panel.Visible then RefreshList() end
+-- 🖱️ ចុចប៊ូតុងកណ្តាល → បើក/បិទ Panel
+Btn.MouseButton1Click:Connect(function()
+    State.Open = not State.Open
+    Panel.Visible = State.Open
+    if State.Open then Refresh() end
 end)
 
--- Auto Steal Toggle
 AutoBtn.MouseButton1Click:Connect(function()
     State.AutoSteal = not State.AutoSteal
     AutoBtn.BackgroundColor3 = State.AutoSteal and UI.Green or UI.Gray
-    AutoBtn.Text = State.AutoSteal and "Auto Steal: ON" or "Auto Steal: OFF"
+    AutoBtn.Text = State.AutoSteal and "🥚 Auto Steal: ON" or "🥚 Auto Steal: OFF"
 end)
 
--- Sort Toggle
-SortBtn.MouseButton1Click:Connect(function()
-    State.SortByValue = not State.SortByValue
-    SortBtn.Text = State.SortByValue and "Sort: Value" or "Sort: Rarity"
-    RefreshList()
-end)
-
--- Speed Slider
 SliderBg.InputBegan:Connect(function(Input)
     if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local Pos = math.clamp((UIS:GetMouseLocation().X - SliderBg.AbsolutePosition.X) / SliderBg.AbsoluteSize.X, 0, 1)
-        State.TweenSpeed = Pos < 0.33 and 100 or Pos < 0.66 and 500 or 1000
-        SpeedLabel.Text = "កម្លាំងរត់: " .. State.TweenSpeed
-        SliderFill.Size = UDim2.new(Pos, 0, 1, 0)
+        local Pos = math.clamp((UIS:GetMouseLocation().X - SliderBg.AbsolutePosition.X)/SliderBg.AbsoluteSize.X,0,1)
+        State.Speed = Pos<0.33 and 100 or Pos<0.66 and 500 or 1000
+        SpeedLbl.Text = "⚡ កម្លាំងរត់: "..State.Speed
+        SliderFill.Size = UDim2.new(Pos,0,1,0)
     end
 end)
 
-print("💖 Jinghok Hub — Loaded Successfully!")
-print("💖 Click the 💖 button to open the panel")
+print("💖 Jinghok Hub — រួចរាល់!")
+print("💖 ចុចប៊ូតុង 💖 នៅកណ្តាលអេក្រង់!")
