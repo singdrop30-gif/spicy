@@ -1,6 +1,6 @@
 -- ==========================================
 -- 💖 JINGHOK HUB | STEAL AN EGG
--- ✅ គុណល្បឿនពិតក្នុងហ្គេម! មិនគុណ 16!
+-- ✅ ប៊ូតុងបិទ/បើកល្បឿន! ON=ខៀវ | OFF=ក្រហម! OFF=ដើរធម្មតា!
 -- ==========================================
 
 local Players = game:GetService("Players")
@@ -15,16 +15,18 @@ local UI = {
     Pink = Color3.fromRGB(255, 0, 140),
     BG = Color3.fromRGB(20, 20, 30),
     Gray = Color3.fromRGB(45, 45, 60),
+    Blue = Color3.fromRGB(30, 144, 255),   -- ON = ខៀវ
+    Red = Color3.fromRGB(190, 40, 60),      -- OFF = ក្រហម
     Green = Color3.fromRGB(40, 190, 70),
-    Red = Color3.fromRGB(190, 40, 60),
     White = Color3.new(1, 1, 1)
 }
 
 -- 📦 State
 local State = {
     Open = false,
-    OriginalSpeed = 16,  -- រក្សាល្បឿនដើមពិត
-    SpeedMultiplier = 1,
+    OriginalSpeed = 16,    -- ល្បឿនដើមពិត
+    SpeedBoostOn = false,  -- បិទ/បើកល្បឿន
+    SelectedMultiplier = 2, -- គុណដែលបានជ្រើសរើស
     NoKnockback = false
 }
 
@@ -54,8 +56,8 @@ JH_Glow.Thickness = 2
 
 -- 📦 MAIN PANEL
 local Panel = Instance.new("Frame")
-Panel.Size = UDim2.new(0, 340, 0, 320)
-Panel.Position = UDim2.new(0.5, -170, 0.5, -160)
+Panel.Size = UDim2.new(0, 340, 0, 380)
+Panel.Position = UDim2.new(0.5, -170, 0.5, -190)
 Panel.BackgroundColor3 = UI.BG
 Panel.Visible = false
 Panel.Active = true
@@ -92,10 +94,97 @@ ClosePanelBtn.TextSize = 20
 ClosePanelBtn.TextColor3 = UI.White
 ClosePanelBtn.Parent = Header
 
+-- ⚡ ប៊ូតុងបិទ/បើកល្បឿនធំ
+local SpeedMainFrame = Instance.new("Frame")
+SpeedMainFrame.Size = UDim2.new(0.9, 0, 0, 60)
+SpeedMainFrame.Position = UDim2.new(0.05, 0, 0, 65)
+SpeedMainFrame.BackgroundColor3 = UI.Gray
+SpeedMainFrame.Parent = Panel
+Instance.new("UICorner", SpeedMainFrame).CornerRadius = UDim.new(0, 10)
+
+local SpeedMainLabel = Instance.new("TextLabel")
+SpeedMainLabel.Size = UDim2.new(0.55, 0, 1, 0)
+SpeedMainLabel.Position = UDim2.new(0, 15, 0, 0)
+SpeedMainLabel.BackgroundTransparency = 1
+SpeedMainLabel.Text = "⚡ បង្កើនល្បឿន"
+SpeedMainLabel.Font = Enum.Font.GothamBold
+SpeedMainLabel.TextSize = 16
+SpeedMainLabel.TextColor3 = UI.White
+SpeedMainLabel.TextXAlignment = Enum.TextXAlignment.Left
+SpeedMainLabel.Parent = SpeedMainFrame
+
+-- 🟢🔴 ប៊ូតុងបិទ/បើកល្បឿន
+local SpeedMainToggle = Instance.new("TextButton")
+SpeedMainToggle.Size = UDim2.new(0, 110, 0, 45)
+SpeedMainToggle.Position = UDim2.new(1, -125, 0.5, -22)
+SpeedMainToggle.BackgroundColor3 = UI.Red   -- ដំបូង = OFF = ក្រហម
+SpeedMainToggle.Text = "OFF"
+SpeedMainToggle.Font = Enum.Font.GothamBold
+SpeedMainToggle.TextSize = 16
+SpeedMainToggle.TextColor3 = UI.White
+SpeedMainToggle.Parent = SpeedMainFrame
+Instance.new("UICorner", SpeedMainToggle).CornerRadius = UDim.new(0, 10)
+
+SpeedMainToggle.MouseButton1Click:Connect(function()
+    State.SpeedBoostOn = not State.SpeedBoostOn
+    if State.SpeedBoostOn then
+        SpeedMainToggle.BackgroundColor3 = UI.Blue  -- ON = ខៀវ
+        SpeedMainToggle.Text = "ON"
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {Title="⚡ ល្បឿន", Text="បើក x" .. State.SelectedMultiplier, Duration=1.5})
+        end)
+    else
+        SpeedMainToggle.BackgroundColor3 = UI.Red   -- OFF = ក្រហម
+        SpeedMainToggle.Text = "OFF"
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {Title="⚡ ល្បឿន", Text="បិទ → ដើរធម្មតាវិញ", Duration=1.5})
+        end)
+    end
+end)
+
+-- 🎯 ជ្រើសរើសគុណល្បឿន
+local MultHeader = Instance.new("TextLabel")
+MultHeader.Size = UDim2.new(0.9, 0, 0, 25)
+MultHeader.Position = UDim2.new(0.05, 0, 0, 145)
+MultHeader.BackgroundTransparency = 1
+MultHeader.Text = "🎯 ជ្រើសរើសគុណ"
+MultHeader.Font = Enum.Font.GothamBold
+MultHeader.TextSize = 13
+MultHeader.TextColor3 = UI.White
+MultHeader.TextXAlignment = Enum.TextXAlignment.Left
+MultHeader.Parent = Panel
+
+local Multipliers = {2, 3, 5, 10, 20, 25, 30}
+local MultBtns = {}
+
+for i, mult in ipairs(Multipliers) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.25, -6, 0, 40)
+    btn.Position = UDim2.new(0.05 + ((i-1) % 4) * 0.245, 0, 0, 175 + math.floor((i-1)/4) * 50)
+    btn.BackgroundColor3 = mult == State.SelectedMultiplier and UI.Green or UI.Gray
+    btn.Text = "x" .. mult
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.TextColor3 = UI.White
+    btn.Parent = Panel
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    MultBtns[mult] = btn
+
+    btn.MouseButton1Click:Connect(function()
+        State.SelectedMultiplier = mult
+        for m, b in pairs(MultBtns) do
+            b.BackgroundColor3 = m == mult and UI.Green or UI.Gray
+        end
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {Title="⚡ គុណល្បឿន", Text="ជ្រើសរើស x" .. mult, Duration=1.5})
+        end)
+    end)
+end
+
 -- 🛡️ No Knockback
 local NKFrame = Instance.new("Frame")
 NKFrame.Size = UDim2.new(0.9, 0, 0, 50)
-NKFrame.Position = UDim2.new(0.05, 0, 0, 65)
+NKFrame.Position = UDim2.new(0.05, 0, 0, 280)
 NKFrame.BackgroundColor3 = UI.Gray
 NKFrame.Parent = Panel
 Instance.new("UICorner", NKFrame).CornerRadius = UDim.new(0, 8)
@@ -128,66 +217,6 @@ NKToggle.MouseButton1Click:Connect(function()
     NKToggle.Text = State.NoKnockback and "ON" or "OFF"
 end)
 
--- ⚡ គុណល្បឿន
-local SpeedHeader = Instance.new("TextLabel")
-SpeedHeader.Size = UDim2.new(0.9, 0, 0, 30)
-SpeedHeader.Position = UDim2.new(0.05, 0, 0, 130)
-SpeedHeader.BackgroundTransparency = 1
-SpeedHeader.Text = "⚡ គុណល្បឿនពិតក្នុងហ្គេម"
-SpeedHeader.Font = Enum.Font.GothamBold
-SpeedHeader.TextSize = 14
-SpeedHeader.TextColor3 = UI.White
-SpeedHeader.TextXAlignment = Enum.TextXAlignment.Left
-SpeedHeader.Parent = Panel
-
--- 🎯 ជម្រើសគុណល្បឿន
-local Multipliers = {
-    {val = 1,  text = "OFF"},
-    {val = 2,  text = "x2"},
-    {val = 3,  text = "x3"},
-    {val = 5,  text = "x5"},
-    {val = 10, text = "x10"},
-    {val = 20, text = "x20"},
-    {val = 25, text = "x25"},
-    {val = 30, text = "x30"},
-}
-local MultBtns = {}
-
-for i, data in ipairs(Multipliers) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.22, -5, 0, 40)
-    btn.Position = UDim2.new(0.05 + ((i-1) % 4) * 0.24, 0, 0, 165 + math.floor((i-1)/4) * 50)
-    btn.BackgroundColor3 = data.val == 1 and UI.Green or UI.Gray
-    btn.Text = data.text
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 13
-    btn.TextColor3 = UI.White
-    btn.Parent = Panel
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    MultBtns[data.val] = btn
-
-    btn.MouseButton1Click:Connect(function()
-        State.SpeedMultiplier = data.val
-        for v, b in pairs(MultBtns) do
-            b.BackgroundColor3 = v == data.val and UI.Green or UI.Gray
-        end
-        local msg = data.val == 1 and "ល្បឿនដើមវិញ" or "គុណ " .. data.text
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {Title="⚡ ល្បឿន", Text=msg, Duration=1.5})
-        end)
-    end)
-end
-
--- 🛡️ Update No Knockback
-local function UpdateNoKnockback()
-    if State.NoKnockback and Player.Character then
-        local Hum = Player.Character:FindFirstChild("Humanoid")
-        if Hum then
-            Hum:SetStateEnabled(Enum.HumanoidStateType.KnockedBack, false)
-        end
-    end
-end
-
 -- 🎯 បើក/បិទម៉ឺនុយ
 local function ToggleMenu()
     State.Open = not State.Open
@@ -205,25 +234,34 @@ end)
 
 -- 🔄 ដំណើរការជានិច្ច
 RunService.Heartbeat:Connect(function()
-    -- រក្សាល្បឿនដើមពិត ពេលទើបចូល
     if Player.Character then
         local Hum = Player.Character:FindFirstChild("Humanoid")
         if Hum then
-            -- កត់ត្រាល្បឿនដើមពិត ពេលទើបចូល
-            if State.SpeedMultiplier == 1 then
+            -- កត់ត្រាល្បឿនដើមពិត
+            if State.OriginalSpeed == 16 then
                 State.OriginalSpeed = Hum.WalkSpeed
             end
-            -- គុណល្បឿនពិត = ល្បឿនដើមរបស់អ្នក × ចំនួនគុណ
-            Hum.WalkSpeed = State.OriginalSpeed * State.SpeedMultiplier
+            
+            -- បើក = គុណ | បិទ = ត្រឡប់ដើមវិញ
+            if State.SpeedBoostOn then
+                Hum.WalkSpeed = State.OriginalSpeed * State.SelectedMultiplier
+            else
+                Hum.WalkSpeed = State.OriginalSpeed
+            end
         end
     end
 
-    -- 🛡️ អត់រុញ
-    UpdateNoKnockback()
+    -- 🛡️ No Knockback
+    if State.NoKnockback and Player.Character then
+        local Hum = Player.Character:FindFirstChild("Humanoid")
+        if Hum then
+            Hum:SetStateEnabled(Enum.HumanoidStateType.KnockedBack, false)
+        end
+    end
 end)
 
 -- ✅ រួចរាល់
 pcall(function()
-    StarterGui:SetCore("SendNotification", {Title="💖 JINGHOK HUB", Text="✅ គុណល្បឿនពិត! មិនមែនគុណ 16!", Duration=3})
+    StarterGui:SetCore("SendNotification", {Title="💖 JINGHOK HUB", Text="✅ ប៊ូតុង ON=ខៀវ | OFF=ក្រហម! OFF=ដើរធម្មតា!", Duration=3})
 end)
-print("💖 JINGHOK HUB | READY | គុណល្បឿនពិតក្នុងហ្គេម!")
+print("💖 JINGHOK HUB | READY | ON=ខៀវ | OFF=ក្រហម! OFF=ដើរធម្មតា!")
