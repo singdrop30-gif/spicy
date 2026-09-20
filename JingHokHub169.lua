@@ -11,238 +11,6 @@ local Character, Humanoid, RootPart
 local UI = {
     BG = Color3.fromRGB(25, 20, 35),
     Accent = Color3.fromRGB(255, 0, 140),
-    AccentBright = 255, 60, 180),
-    Green = Color3.fromRGB(40, 180, 40),
-    Red = Color3.fromRGB(180, 40, 40),
-    Gray = Color3.fromRGB(55, 45, 75),
-    DarkGray = Color3.fromRGB(40, 30, 55),
-    Text = Color3.new(1, 1, 1),
-    Gold = Color3.fromRGB(255, 215, 0)
-}
-
--- 📦 ស្ថានភាព
-local State = {
-    PanelOpen = false,
-    AutoEnabled = false,
-    CurrentSpeed = 100,
-    IsMoving = false,
-    NoKnockback = true,
-    NoDamage = true,
-    InstantHatch = false,
-    NoCountdown = false
-}
-
--- 🐾 សត្វ
-local Creatures = {
-    {Name = "Winged Lamb", Value = 1.3, Unit = "M/s", Color = Color3.fromRGB(255, 230, 150)},
-    {Name = "Bladehide", Value = 753.7, Unit = "K/s", Color = Color3.fromRGB(80, 160, 220)},
-    {Name = "Cosmic Gecko", Value = 720.8, Unit = "K/s", Color = Color3.fromRGB(100, 80, 220)},
-    {Name = "Light Dove", Value = 557.3, Unit = "K/s", Color = Color3.fromRGB(240, 240, 255)},
-    {Name = "Cosmic Gorilla", Value = 379.0, Unit = "K/s", Color = Color3.fromRGB(70, 90, 140)},
-    {Name = "Pure Jellyfish", Value = 950.0, Unit = "K/s", Color = Color3.fromRGB(200, 100, 255)}
-}
-
--- 🛡️ ការពារ — គេវ៉ៃអត់ដួល + អត់ខូចខាត
-local function SetupProtection()
-    Character = Player.Character or Player.CharacterAdded:Wait()
-    Humanoid = Character:WaitForChild("Humanoid")
-    RootPart = Character:WaitForChild("HumanoidRootPart")
-    
-    Humanoid.MaxHealth = math.huge
-    Humanoid.Health = math.huge
-    RootPart.CustomPhysicalProperties = PhysicalProperties.new(100, 0, 0)
-    
-    Humanoid.HealthChanged:Connect(function(newHealth)
-        if State.NoDamage and newHealth < Humanoid.MaxHealth then
-            Humanoid.Health = Humanoid.MaxHealth
-        end
-    end)
-    
-    RunService.Stepped:Connect(function()
-        if State.NoKnockback and RootPart then
-            RootPart.Velocity = Vector3.new(RootPart.Velocity.X * 0.1, RootPart.Velocity.Y, RootPart.Velocity.Z * 0.1)
-        end
-    end)
-end
-
-Player.CharacterAdded:Connect(SetupProtection)
-SetupProtection()
-
--- 🥚 បើកពងភ្លាមៗ + បិទម៉ោងរាប់ថយ
-local function SetupEggHatch()
-    RunService.Stepped:Connect(function()
-        if State.NoCountdown then
-            for _, v in pairs(WS:GetDescendants()) do
-                if v:IsA("NumberValue") and string.find(string.lower(v.Name), "countdown") 
-                or string.find(string.lower(v.Name), "timer") then
-                    v.Value = 0
-                end
-            end
-        end
-        if State.InstantHatch then
-            for _, v in pairs(WS:GetDescendants()) do
-                if v:IsA("BasePart") and string.find(string.lower(v.Name), "egg") then
-                    for _, child in pairs(v:GetChildren()) do
-                        if child:IsA("NumberValue") or child:IsA("IntValue") then
-                            if string.find(string.lower(child.Name), "time") 
-                            or string.find(string.lower(child.Name), "hatch")
-                            or string.find(string.lower(child.Name), "timer") then
-                                child.Value = 0
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end)
-end
-SetupEggHatch()
-
--- 🚀 ទៅយកសត្វ
-local function FlyTo(Target)
-    if not Target or State.IsMoving then return end
-    if not Player.Character or not Player.Character:FindFirstChild("HumanoidRootPart") then return end
-    
-    State.IsMoving = true
-    local Root = Player.Character.HumanoidRootPart
-    local EndPos = Target.Position + Vector3.new(0, 3, 0)
-    local Dist = (EndPos - Root.Position).Magnitude
-    local Dur = math.max(0.15, Dist / State.CurrentSpeed)
-    
-    Tween:Create(Root, TweenInfo.new(Dur), {CFrame = CFrame.new(EndPos)}):Play()
-    task.wait(Dur)
-    State.IsMoving = false
-end
-
--- 🖥️ GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "JinghokHub"
-ScreenGui.Parent = Gui
-
--- ==========================================
--- 🖼️ LOGO 45x45 | អូសបានគ្រប់ទីកន្លែង
--- ==========================================
-local LogoBtn = Instance.new("TextButton")
-LogoBtn.Name = "JinghokLogo"
-LogoBtn.Size = UDim2.new(0, 45, 0, 45)
-LogoBtn.Position = UDim2.new(0.02, 0, 0.88, 0)
-LogoBtn.BackgroundTransparency = 1
-LogoBtn.Text = "🦋"
-LogoBtn.Font = Enum.Font.GothamBold
-LogoBtn.TextSize = 28
-LogoBtn.Active = true
-LogoBtn.Draggable = true
-LogoBtn.AutoLocalize = false
-LogoBtn.Parent = ScreenGui
-
--- ==========================================
--- 📋 MAIN PANEL
--- ==========================================
-local Panel = Instance.new("Frame")
-Panel.Name = "MainPanel"
-Panel.Size = UDim2.new(0, 420, 0, 580)
-Panel.Position = UDim2.new(0.5, -210, 0.5, -290)
-Panel.BackgroundColor3 = UI.BG
-Panel.BorderSizePixel = 3
-Panel.BorderColor3 = UI.Accent
-Panel.Visible = false
-Panel.Active = true
-Panel.Draggable = true
-Panel.Parent = ScreenGui
-Instance.new("UICorner", Panel).CornerRadius = UDim.new(0, 14)
-
--- ក្បាល
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 55)
-Header.BackgroundColor3 = UI.Accent
-Header.Parent = Panel
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
-
-local HeaderTitle = Instance.new("TextLabel")
-HeaderTitle.Size = UDim2.new(1, 0, 1, 0)
-HeaderTitle.BackgroundTransparency = 1
-HeaderTitle.Text = "💖 JINGHOK HUB"
-HeaderTitle.TextColor3 = UI.Text
-HeaderTitle.Font = Enum.Font.GothamBold
-HeaderTitle.TextSize = 22
-HeaderTitle.Parent = Header
-
--- 🥚 បើកពងភ្លាមៗ
-local InstantHatchBtn = Instance.new("TextButton")
-InstantHatchBtn.Size = UDim2.new(0.90, 0, 0, 45)
-InstantHatchBtn.Position = UDim2.new(0.05, 0, 0.10, 0)
-InstantHatchBtn.BackgroundColor3 = UI.Gray
-InstantHatchBtn.Text = "🥚 45x45 បើកពងភ្លាមៗ៖ បិទ"
-<[SILENT_never_used_51bce0c785ca2f68081bfa7d91973934]>
-ខ្ញុំនឹងជួសជុលកូដដែលនៅខូចនេះឱ្យវាដំណើរការត្រឹមត្រូវវិញ! 😊
-
-```lua
--- ==========================================
--- 💖 JINGHOK HUB | STEAL AN EGG
--- ✅ Logo 45x45 | អូសបានគ្រប់ទីកន្លែង | ប៊ូតុង Function
--- ==========================================
-
-local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
-local WS = game:GetService("Workspace")
-local Tween = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local Player = Players.LocalPlayer
-local Gui = Player:WaitForChild("PlayerGui")
-local Character, Humanoid, RootPart
-
--- 🎨 ពណ៌
-local UI = {
-    BG = Color3.fromRGB(25, 20, 35),
-    Accent = Color3.fromRGB(255, 0, 140),
-    AccentBright = Color3.fromRGB(255, 60, 180),
-    Green = Color3.fromRGB(40, 180, 40),
-    Red = Color3.fromRGB(180, 40, 40),
-    Gray = Color3.fromRGB(55, 45, 75),
-    DarkGray = Color3.fromRGB(40, 30, 55),
-    Text = Color3.new(1, 1, 1),
-    Gold = Color3.fromRGB(255, 215, 0)
-}
-
--- 📦 ស្ថានភាព
-local State = {
-    PanelOpen = false,
-    AutoEnabled = false,
-    CurrentSpeed = 100,
-    IsMoving = false,
-    NoKnockback = true,
-    NoDamage = true,
-    InstantHatch = false,
-    NoCountdown = false
-}
-
--- 🐾 សត្វ
-local Creatures = {
-    {Name = "Winged Lamb", Value = 1.3, Unit = "M/s", Color = Color3.fromRGB(255, 230, 150)},
-    {Name = "Bladehide", Value = 753.7, Unit = "K/s", Color = Color3.fromRGB(80, 160, 220)},
-    {Name = "Cosmic Gecko", Value = 720.8, Unit = "K/s", Color = Color3.fromRGB(100, 80, 220)},
-    {Name = "<[SILENT_never_used_51bce0c785ca2f68081bfa7d91973934]>
-ខ្ញុំនឹងបន្ថែមកូដឱ្យវាចុចហើយមាន Panel Function ឡើងមក! 😊
-
-```lua
--- ==========================================
--- 💖 JINGHOK HUB | STEAL AN EGG
--- ✅ Logo 45x45 | អូសបានគ្រប់ទីកន្លែង | ប៊ូតុង Function
--- ==========================================
-
-local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
-local WS = game:GetService("Workspace")
-local Tween = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local Player = Players.LocalPlayer
-local Gui = Player:WaitForChild("PlayerGui")
-local Character, Humanoid, RootPart
-
--- 🎨 ពណ៌
-local UI = {
-    BG = Color3.fromRGB(25, 20, 35),
-    Accent = Color3.fromRGB(255, 0, 140),
     AccentBright = Color3.fromRGB(255, 60, 180),
     Green = Color3.fromRGB(40, 180, 40),
     Red = Color3.fromRGB(180, 40, 40),
@@ -350,22 +118,27 @@ end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "JinghokHub"
 ScreenGui.Parent = Gui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
 
 -- ==========================================
--- 🖼️ LOGO 45x45 | អូសបានគ្រប់ទីកន្លែង
+-- 🖼️ LOGO BUTTON 55x55 | នៅជ្រុងក្រោមស្តាំ
 -- ==========================================
 local LogoBtn = Instance.new("TextButton")
 LogoBtn.Name = "JinghokLogo"
-LogoBtn.Size = UDim2.new(0, 45, 0, 45)
-LogoBtn.Position = UDim2.new(0.02, 0, 0.88, 0)
-LogoBtn.BackgroundTransparency = 1
-LogoBtn.Text = "🦋"
+LogoBtn.Size = UDim2.new(0, 55, 0, 55)
+LogoBtn.Position = UDim2.new(1, -70, 1, -70)
+LogoBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 140)
+LogoBtn.BackgroundTransparency = 0
+LogoBtn.Text = "JH"
 LogoBtn.Font = Enum.Font.GothamBold
-LogoBtn.TextSize = 28
+LogoBtn.TextSize = 24
+LogoBtn.TextColor3 = Color3.new(1, 1, 1)
 LogoBtn.Active = true
 LogoBtn.Draggable = true
 LogoBtn.AutoLocalize = false
 LogoBtn.Parent = ScreenGui
+Instance.new("UICorner", LogoBtn).CornerRadius = UDim.new(0, 12)
 
 -- ==========================================
 -- 📋 MAIN PANEL
@@ -426,7 +199,7 @@ Instance.new("UICorner", NoCountdownBtn).CornerRadius = UDim.new(0, 10)
 -- 🛡️ គេវ៉ៃអត់ដួល
 local ProtectBtn = Instance.new("TextButton")
 ProtectBtn.Size = UDim2.new(0.90, 0, 0, 45)
-ProtectBtn.Position = UDim2.new(0.05, 0, 0.26, 0)
+ ProtectBtn.Position = UDim2.new(0.05, 0, 0.26, 0)
 ProtectBtn.BackgroundColor3 = UI.Green
 ProtectBtn.Text = "🛡️ គេវ៉ៃអត់ដួល៖ បើក"
 ProtectBtn.TextColor3 = UI.Text
@@ -481,7 +254,7 @@ LogoBtn.MouseButton1Click:Connect(function()
 end)
 
 -- 🛡️ បើក/បិទ ការពារ
-ProtectBtn.MouseButton1Click:Connect(function()
+ ProtectBtn.MouseButton1Click:Connect(function()
     State.NoKnockback = not State.NoKnockback
     State.NoDamage = State.NoKnockback
     if State.NoKnockback then
@@ -528,8 +301,11 @@ local function StartHub()
     State.PanelOpen = false
     Panel.Visible = false
     LogoBtn.Visible = true
-    LogoBtn.Position = UDim2.new(0.02, 0, 0.88, 0)
+    LogoBtn.Position = UDim2.new(1, -70, 1, -70)
 end
 
 -- 📋 ប្រាប់អ្នកប្រើប្រាស់
-print("បើកដំណើរការទាំងនេះ
+print("បើកដំណើរការហើយ!")
+print("ចុចប៊ូតុង JH ពណ៌ផ្កាឈូក នៅជ្រុងក្រោមស្តាំ ដើម្បីបើក Menu")
+
+StartHub()
