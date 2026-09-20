@@ -1,3 +1,8 @@
+-- ==========================================
+-- 💖 JINGHOK HUB | STEAL AN EGG
+-- ✅ គុណល្បឿន 2x 3x 5x 10x 20x 30x + ម៉ោងពង ១ នាទី!
+-- ==========================================
+
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -19,7 +24,7 @@ local UI = {
 -- 📦 State
 local State = {
     Open = false,
-    Speed = 16,
+    SpeedMultiplier = 1,
     SpeedEnabled = false,
     FastHatch = false
 }
@@ -50,8 +55,8 @@ JH_Glow.Thickness = 2
 
 -- 📦 MAIN PANEL
 local Panel = Instance.new("Frame")
-Panel.Size = UDim2.new(0, 320, 0, 340)
-Panel.Position = UDim2.new(0.5, -160, 0.5, -170)
+Panel.Size = UDim2.new(0, 320, 0, 420)
+Panel.Position = UDim2.new(0.5, -160, 0.5, -210)
 Panel.BackgroundColor3 = UI.BG
 Panel.Visible = false
 Panel.Active = true
@@ -118,91 +123,85 @@ HatchToggle.TextColor3 = UI.White
 HatchToggle.Parent = HatchFrame
 Instance.new("UICorner", HatchToggle).CornerRadius = UDim.new(0, 6)
 
--- ⚡ ល្បឿនរត់ | ON/OFF
-local SpeedFrame = Instance.new("Frame")
-SpeedFrame.Size = UDim2.new(0.9, 0, 0, 45)
-SpeedFrame.Position = UDim2.new(0.05, 0, 0, 120)
-SpeedFrame.BackgroundColor3 = UI.Gray
-SpeedFrame.Parent = Panel
-Instance.new("UICorner", SpeedFrame).CornerRadius = UDim.new(0, 8)
+-- ⚡ គុណល្បឿន
+local SpeedHeader = Instance.new("TextLabel")
+SpeedHeader.Size = UDim2.new(0.9, 0, 0, 30)
+SpeedHeader.Position = UDim2.new(0.05, 0, 0, 130)
+SpeedHeader.BackgroundTransparency = 1
+SpeedHeader.Text = "⚡ គុណល្បឿន"
+SpeedHeader.Font = Enum.Font.GothamBold
+SpeedHeader.TextSize = 14
+SpeedHeader.TextColor3 = UI.White
+SpeedHeader.TextXAlignment = Enum.TextXAlignment.Left
+SpeedHeader.Parent = Panel
 
-local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Size = UDim2.new(0.6, 0, 1, 0)
-SpeedLabel.Position = UDim2.new(0, 12, 0, 0)
-SpeedLabel.BackgroundTransparency = 1
-SpeedLabel.Text = "⚡ ល្បឿនរត់"
-SpeedLabel.Font = Enum.Font.GothamBold
-SpeedLabel.TextSize = 15
-SpeedLabel.TextColor3 = UI.White
-SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
-SpeedLabel.Parent = SpeedFrame
+-- 🎯 ប៊ូតុងគុណល្បឿន
+local Multipliers = {2, 3, 5, 10, 20, 30}
+local MultBtns = {}
 
-local SpeedToggle = Instance.new("TextButton")
-SpeedToggle.Size = UDim2.new(0, 60, 0, 28)
-SpeedToggle.Position = UDim2.new(1, -72, 0.5, -14)
-SpeedToggle.BackgroundColor3 = UI.Red
-SpeedToggle.Text = "OFF"
-SpeedToggle.Font = Enum.Font.GothamBold
-SpeedToggle.TextSize = 12
-SpeedToggle.TextColor3 = UI.White
-SpeedToggle.Parent = SpeedFrame
-Instance.new("UICorner", SpeedToggle).CornerRadius = UDim.new(0, 6)
-
--- 🎯 ជម្រើសល្បឿន
-local Speeds = {500, 2000, 5000, 10000, 20000}
-local SpdBtns = {}
-
-for i, spd in ipairs(Speeds) do
+for i, mult in ipairs(Multipliers) do
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.17, -4, 0, 40)
-    btn.Position = UDim2.new(0.05 + ((i-1) % 5) * 0.19, 0, 0, 190 + math.floor((i-1)/5) * 50)
+    btn.Size = UDim2.new(0.28, -5, 0, 40)
+    btn.Position = UDim2.new(0.05 + ((i-1) % 3) * 0.32, 0, 0, 170 + math.floor((i-1)/3) * 50)
     btn.BackgroundColor3 = UI.Gray
-    btn.Text = tostring(spd)
+    btn.Text = "x" .. mult
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 14
     btn.TextColor3 = UI.White
     btn.Parent = Panel
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    SpdBtns[spd] = btn
+    MultBtns[mult] = btn
 
     btn.MouseButton1Click:Connect(function()
-        State.Speed = spd
-        for s, b in pairs(SpdBtns) do
-            b.BackgroundColor3 = s == spd and UI.Green or UI.Gray
+        State.SpeedMultiplier = mult
+        for m, b in pairs(MultBtns) do
+            b.BackgroundColor3 = m == mult and UI.Green or UI.Gray
         end
         pcall(function()
-            StarterGui:SetCore("SendNotification", {Title="⚡ ល្បឿន", Text="កំណត់: " .. spd, Duration=1.5})
+            StarterGui:SetCore("SendNotification", {Title="⚡ គុណល្បឿន", Text="x" .. mult, Duration=1.5})
         end)
     end)
 end
 
--- 🥚 បិទ/បើក បើកពង
+-- 🥚 កាត់ម៉ោងពង
+local function SetAllEggTimes()
+    for _, obj in pairs(WS:GetDescendants()) do
+        if obj:IsA("NumberValue") or obj:IsA("IntValue") then
+            local n = string.lower(obj.Name)
+            if string.find(n, "time") or string.find(n, "timer") or string.find(n, "hatch") 
+            or string.find(n, "grow") or string.find(n, "countdown") or string.find(n, "egg") then
+                obj.Value = 60
+            end
+        end
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+            local t = string.lower(obj.Text)
+            if string.find(t, "h") and string.find(t, "m") or string.find(t, "hour") then
+                obj.Text = "1m"
+            end
+        end
+    end
+    for _, obj in pairs(Player.PlayerGui:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+            local t = string.lower(obj.Text)
+            if string.find(t, "h") and string.find(t, "m") or string.find(t, "hour") then
+                obj.Text = "1m"
+            end
+        end
+    end
+end
+
 HatchToggle.MouseButton1Click:Connect(function()
     State.FastHatch = not State.FastHatch
     if State.FastHatch then
         HatchToggle.BackgroundColor3 = UI.Green
         HatchToggle.Text = "ON"
+        SetAllEggTimes()
         pcall(function()
-            StarterGui:SetCore("SendNotification", {Title="🥚 បើកពង", Text="រង់ចាំតែ ១ នាទី!", Duration=2})
+            StarterGui:SetCore("SendNotification", {Title="🥚 បើកពង", Text="ម៉ោង ១ នាទី!", Duration=2})
         end)
     else
         HatchToggle.BackgroundColor3 = UI.Red
         HatchToggle.Text = "OFF"
-    end
-end)
-
--- ⚡ បិទ/បើក ល្បឿនរត់
-SpeedToggle.MouseButton1Click:Connect(function()
-    State.SpeedEnabled = not State.SpeedEnabled
-    if State.SpeedEnabled then
-        SpeedToggle.BackgroundColor3 = UI.Green
-        SpeedToggle.Text = "ON"
-    else
-        SpeedToggle.BackgroundColor3 = UI.Red
-        SpeedToggle.Text = "OFF"
-        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
-            Player.Character.Humanoid.WalkSpeed = 16
-        end
     end
 end)
 
@@ -221,33 +220,23 @@ UIS.InputBegan:Connect(function(input, gp)
     if input.KeyCode == Enum.KeyCode.RightShift then ToggleMenu() end
 end)
 
--- 🔄 ដំណើរការជានិច្ច
-RunService.RenderStepped:Connect(function()
-    -- ⚡ ល្បឿនរត់
-    if State.SpeedEnabled and Player.Character then
+-- 🔄 អនុវត្តគុណល្បឿន + រក្សាម៉ោងពង
+RunService.Heartbeat:Connect(function()
+    -- ⚡ គុណល្បឿន
+    if Player.Character then
         local Hum = Player.Character:FindFirstChild("Humanoid")
         if Hum then
-            Hum.WalkSpeed = State.Speed
+            Hum.WalkSpeed = 16 * State.SpeedMultiplier
         end
     end
-
-    -- 🥚 បើកពង ១ នាទី
+    -- 🥚 រក្សាម៉ោងពង ១ នាទី
     if State.FastHatch then
-        for _, v in pairs(WS:GetDescendants()) do
-            if v:IsA("NumberValue") or v:IsA("IntValue") then
-                local n = string.lower(v.Name)
-                if string.find(n, "hatch") or string.find(n, "timer") or string.find(n, "countdown") or string.find(n, "time") then
-                    if v.Value > 60 then
-                        v.Value = 60
-                    end
-                end
-            end
-        end
+        SetAllEggTimes()
     end
 end)
 
 -- ✅ រួចរាល់
 pcall(function()
-    StarterGui:SetCore("SendNotification", {Title="💖 JINGHOK HUB", Text="✅ រួចរាល់! ទាំងអស់មាន ON/OFF", Duration=3})
+    StarterGui:SetCore("SendNotification", {Title="💖 JINGHOK HUB", Text="✅ រួចរាល់! x2-x30 + ពង ១ នាទី!", Duration=3})
 end)
-print("💖 JINGHOK HUB | READY | Speed + Fast Hatch | ON/OFF")
+print("💖 JINGHOK HUB | READY | x2 x3 x5 x10 x20 x30 + ពង ១ នាទី!")
