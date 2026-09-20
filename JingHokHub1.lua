@@ -120,58 +120,33 @@ ScreenGui.Name = "JinghokHub"
 ScreenGui.Parent = Gui
 
 -- ==========================================
--- 🖼️ LOGO BUTTON
+-- 🖼️ LOGO BUTTON រាងតូច + អូសបានគ្រប់ទីកន្លែង
 -- ==========================================
 local LogoBtn = Instance.new("Frame")
-LogoBtn.Size = UDim2.new(0, 140, 0, 140)
-LogoBtn.Position = UDim2.new(0.5, -70, 0.6, -70)
+LogoBtn.Size = UDim2.new(0, 55, 0, 55)
+LogoBtn.Position = UDim2.new(0.02, 0, 0.88, 0)
 LogoBtn.BackgroundTransparency = 1
 LogoBtn.Active = true
 LogoBtn.Draggable = true
+LogoBtn.ClipsDescendants = true
 LogoBtn.Parent = ScreenGui
 
 local LogoHex = Instance.new("Frame")
 LogoHex.Size = UDim2.new(1, 0, 1, 0)
 LogoHex.BackgroundTransparency = 1
-LogoHex.BorderSizePixel = 4
+LogoHex.BorderSizePixel = 3
 LogoHex.BorderColor3 = UI.Accent
 LogoHex.Parent = LogoBtn
-Instance.new("UICorner", LogoHex).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", LogoHex).CornerRadius = UDim.new(0, 12)
 
 local LogoText = Instance.new("TextLabel")
-LogoText.Size = UDim2.new(1, 0, 0.5, 0)
-LogoText.Position = UDim2.new(0, 0, 0.25, 0)
+LogoText.Size = UDim2.new(1, 0, 1, 0)
 LogoText.BackgroundTransparency = 1
-LogoText.Text = "Jinghok"
-LogoText.TextColor3 = UI.AccentBright
+LogoText.Text = "💖"
 LogoText.Font = Enum.Font.GothamBold
-LogoText.TextSize = 32
+LogoText.TextSize = 28
 LogoText.TextScaled = true
-LogoText.TextStrokeTransparency = 0
-LogoText.TextStrokeColor3 = UI.Accent
 LogoText.Parent = LogoBtn
-
-local HornL = Instance.new("TextLabel")
-HornL.Size = UDim2.new(0, 35, 0, 50)
-HornL.Position = UDim2.new(0.02, 0, -0.05, 0)
-HornL.BackgroundTransparency = 1
-HornL.Text = "◢"
-HornL.TextColor3 = UI.Accent
-HornL.Font = Enum.Font.GothamBold
-HornL.TextSize = 40
-HornL.Rotation = -30
-HornL.Parent = LogoBtn
-
-local HornR = Instance.new("TextLabel")
-HornR.Size = UDim2.new(0, 35, 0, 50)
-HornR.Position = UDim2.new(0.68, 0, -0.05, 0)
-HornR.BackgroundTransparency = 1
-HornR.Text = "◣"
-HornR.TextColor3 = UI.Accent
-HornR.Font = Enum.Font.GothamBold
-HornR.TextSize = 40
-HornR.Rotation = 30
-HornR.Parent = LogoBtn
 
 local ClickArea = Instance.new("TextButton")
 ClickArea.Size = UDim2.new(1, 0, 1, 0)
@@ -408,5 +383,5 @@ AutoBtn.MouseButton1Click:Connect(function()
 end)
 
 print("💖 JINGHOK HUB — រួចរាល់!")
-print("💖 ចុច Logo Jinghok ដើម្បីបើក!")
-print("🥚 អក្សរទាំងអស់ជាភាសាខ្មែរ!")
+print("💖 Logo តូចហើយ អូសបានគ្រប់ទីកន្លែង!")
+print("💖 ចុច Logo ដើម្បីបើកផ្ទាំង!")
