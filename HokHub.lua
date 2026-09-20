@@ -1,691 +1,333 @@
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local WS = game:GetService("Workspace")
-local Tween = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local Player = Players.LocalPlayer
 local Gui = Player:WaitForChild("PlayerGui")
-local Character, Humanoid, RootPart, Camera
 
--- 🎨 ពណ៌ UI
+-- 🎨 Colors
 local UI = {
-    Primary = Color3.fromRGB(255, 0, 140),
-    Secondary = Color3.fromRGB(200, 0, 110),
-    BG = Color3.fromRGB(22, 22, 30),
-    Darker = Color3.fromRGB(15, 15, 22),
-    Button = Color3.fromRGB(200, 20, 60),
-    ButtonHover = Color3.fromRGB(230, 40, 80),
-    Green = Color3.fromRGB(40, 200, 60),
-    Red = Color3.fromRGB(200, 40, 60),
-    Gray = Color3.fromRGB(50, 50, 65),
-    Text = Color3.new(1, 1, 1),
-    Border = Color3.fromRGB(80, 80, 100)
+    Pink = Color3.fromRGB(255, 0, 140),
+    PinkDark = Color3.fromRGB(180, 0, 100),
+    BG = Color3.fromRGB(20, 20, 30),
+    Dark = Color3.fromRGB(12, 12, 20),
+    Gray = Color3.fromRGB(45, 45, 60),
+    Green = Color3.fromRGB(40, 190, 70),
+    Red = Color3.fromRGB(190, 40, 60),
+    White = Color3.new(1, 1, 1)
 }
 
--- 📦 ស្ថានភាពទាំងអស់
+-- 📦 State
 local State = {
-    HubOpen = false,
-    ActiveTab = "Farm",
-    
-    -- ESP Settings
-    ESP_Enabled = false,
-    ESP_FixedSize = false,
-    ESP_ShowOwnBase = true,
-    ESP_MinRarity = 5, -- 1=Common, 5=Legendary
-    ESP_ShowInfo = true,
-    ESP_MinValue = 0,
-    ESP_Size = 75,
-    
-    -- Auto Steal Settings
-    AutoSteal_Enabled = false,
-    AutoSteal_TargetAreas = 2,
-    AutoSteal_MinRarity = 0, -- Any
-    AutoSteal_MinValue = 1000, -- M/s
-    AutoSteal_TargetEggs = "All",
-    AutoSteal_PrioritizeRift = false,
-    TweenSpeed = 1000,
-    
-    -- Anti Guard / Safety
-    AntiGuard = false,
-    LastStealTime = 0,
-    StealCooldown = 0.8
+    Open = false,
+    ESP = false,
+    AutoSteal = false,
+    InstantHatch = false,
+    NoCountdown = false,
+    NoKnockback = true,
+    Speed = 1000
 }
 
--- 🥐 ថ្នាក់ភាពកម្រ Egg
-local RarityOrder = {
-    [1] = {Name = "Common", Color = Color3.fromRGB(180, 180, 180)},
-    [2] = {Name = "Uncommon", Color = Color3.fromRGB(80, 220, 80)},
-    [3] = {Name = "Rare", Color = Color3.fromRGB(80, 140, 255)},
-    [4] = {Name = "Epic", Color = Color3.fromRGB(180, 80, 255)},
-    [5] = {Name = "Legendary", Color = Color3.fromRGB(255, 200, 40)},
-    [6] = {Name = "Mythic", Color = Color3.fromRGB(255, 80, 220)}
+-- 🥚 Egg List
+local Eggs = {
+    {Name = "Imp", Value = "17.1M/s", Rarity = "Mythic", Color = Color3.fromRGB(255, 80, 220)},
+    {Name = "Kraken", Value = "13.1M/s", Rarity = "Mythic", Color = Color3.fromRGB(255, 80, 220)},
+    {Name = "Beluga Whale", Value = "3.3M/s", Rarity = "Legendary", Color = Color3.fromRGB(255, 200, 40)},
+    {Name = "Toro", Value = "3.2M/s", Rarity = "Legendary", Color = Color3.fromRGB(255, 200, 40)},
+    {Name = "Bladehide", Value = "2.4M/s", Rarity = "Legendary", Color = Color3.fromRGB(255, 200, 40)},
+    {Name = "Winged Lamb", Value = "1.3M/s", Rarity = "Epic", Color = Color3.fromRGB(180, 80, 255)}
 }
 
--- 🐾 បញ្ជីសត្វ/ពង
-local EggList = {
-    {Name = "Imp", Value = 17.1, Unit = "M/s", Rarity = 6, Icon = "😈"},
-    {Name = "Kraken", Value = 13.1, Unit = "M/s", Rarity = 6, Icon = "🐙"},
-    {Name = "Beluga Whale", Value = 3.3, Unit = "M/s", Rarity = 5, Icon = "🐋"},
-    {Name = "Toro", Value = 3.2, Unit = "M/s", Rarity = 5, Icon = "🐂"},
-    {Name = "Bladehide", Value = 2.4, Unit = "M/s", Rarity = 5, Icon = "🦎"},
-    {Name = "Winged Lamb", Value = 1.3, Unit = "M/s", Rarity = 4, Icon = "🐑"}
-}
+-- 🖥️ ScreenGui
+local SG = Instance.new("ScreenGui")
+SG.Name = "JinghokHub"
+SG.ResetOnSpawn = false
+SG.IgnoreGuiInset = true
+SG.Parent = Gui
 
--- 🖥️ GUI Main Container
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "JinghokHub"
-ScreenGui.Parent = Gui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.ResetOnSpawn = false
+-- 🎯 FLOATING BUTTON: JH (តែមួយគត់!)
+local JH_BTN = Instance.new("TextButton")
+JH_BTN.Size = UDim2.new(0, 55, 0, 55)
+JH_BTN.Position = UDim2.new(1, -75, 1, -75)
+JH_BTN.BackgroundColor3 = UI.Pink
+JH_BTN.Text = "JH"
+JH_BTN.Font = Enum.Font.GothamBold
+JH_BTN.TextSize = 22
+JH_BTN.TextColor3 = UI.White
+JH_BTN.Active = true
+JH_BTN.Draggable = true
+JH_BTN.Parent = SG
+Instance.new("UICorner", JH_BTN).CornerRadius = UDim.new(0, 12)
+local JH_Glow = Instance.new("UIStroke", JH_BTN)
+JH_Glow.Color = UI.Pink
+JH_Glow.Thickness = 2
 
--- 🎯 Floating Button (JH)
-local FloatingBtn = Instance.new("TextButton")
-FloatingBtn.Name = "JinghokBtn"
-FloatingBtn.Size = UDim2.new(0, 55, 0, 55)
-FloatingBtn.Position = UDim2.new(1, -75, 1, -75)
-FloatingBtn.BackgroundColor3 = UI.Primary
-FloatingBtn.Text = "JH"
-FloatingBtn.Font = Enum.Font.GothamBold
-FloatingBtn.TextSize = 22
-FloatingBtn.TextColor3 = UI.Text
-FloatingBtn.Active = true
-FloatingBtn.Draggable = true
-FloatingBtn.Parent = ScreenGui
-Instance.new("UICorner", FloatingBtn).CornerRadius = UDim.new(0, 12)
+-- ❎ CLOSE ALL BUTTON
+local CLOSE_ALL_BTN = Instance.new("TextButton")
+CLOSE_ALL_BTN.Size = UDim2.new(0, 45, 0, 45)
+CLOSE_ALL_BTN.Position = UDim2.new(1, -130, 1, -75)
+CLOSE_ALL_BTN.BackgroundColor3 = UI.Red
+CLOSE_ALL_BTN.Text = "❎"
+CLOSE_ALL_BTN.Font = Enum.Font.GothamBold
+CLOSE_ALL_BTN.TextSize = 18
+CLOSE_ALL_BTN.TextColor3 = UI.White
+CLOSE_ALL_BTN.Active = true
+CLOSE_ALL_BTN.Draggable = true
+CLOSE_ALL_BTN.Parent = SG
+Instance.new("UICorner", CLOSE_ALL_BTN).CornerRadius = UDim.new(0, 10)
 
--- 📦 Main Window
-local MainWindow = Instance.new("Frame")
-MainWindow.Name = "MainWindow"
-MainWindow.Size = UDim2.new(0, 720, 0, 520)
-MainWindow.Position = UDim2.new(0.5, -360, 0.5, -260)
-MainWindow.BackgroundColor3 = UI.BG
-MainWindow.BorderSizePixel = 2
-MainWindow.BorderColor3 = UI.Primary
-MainWindow.Visible = false
-MainWindow.Active = true
-MainWindow.Draggable = true
-MainWindow.ClipsDescendants = true
-MainWindow.Parent = ScreenGui
-Instance.new("UICorner", MainWindow).CornerRadius = UDim.new(0, 16)
+-- 📦 MAIN PANEL
+local Panel = Instance.new("Frame")
+Panel.Size = UDim2.new(0, 420, 0, 560)
+Panel.Position = UDim2.new(0.5, -210, 0.5, -280)
+Panel.BackgroundColor3 = UI.BG
+Panel.Visible = false
+Panel.Active = true
+Panel.Draggable = true
+Panel.Parent = SG
+Instance.new("UICorner", Panel).CornerRadius = UDim.new(0, 14)
+local PanelStroke = Instance.new("UIStroke", Panel)
+PanelStroke.Color = UI.Pink
 
--- 🔝 Header
+-- 🔝 HEADER
 local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1, 0, 0, 50)
-Header.BackgroundColor3 = UI.Primary
-Header.Parent = MainWindow
+Header.BackgroundColor3 = UI.Pink
+Header.Parent = Panel
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "💖 JINGHOK HUB"
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 22
-Title.TextColor3 = UI.Text
+Title.TextSize = 20
+Title.TextColor3 = UI.White
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Header
 
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 40, 0, 40)
-CloseBtn.Position = UDim2.new(1, -50, 0, 5)
-CloseBtn.BackgroundTransparency = 1
-CloseBtn.Text = "✕"
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 20
-CloseBtn.TextColor3 = UI.Text
-CloseBtn.Parent = Header
+local ClosePanelBtn = Instance.new("TextButton")
+ClosePanelBtn.Size = UDim2.new(0, 40, 0, 40)
+ClosePanelBtn.Position = UDim2.new(1, -45, 0, 5)
+ClosePanelBtn.BackgroundTransparency = 1
+ClosePanelBtn.Text = "✕"
+ClosePanelBtn.Font = Enum.Font.GothamBold
+ClosePanelBtn.TextSize = 20
+ClosePanelBtn.TextColor3 = UI.White
+ClosePanelBtn.Parent = Header
 
--- 📌 Sidebar
-local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0, 140, 1, -50)
-Sidebar.Position = UDim2.new(0, 0, 0, 50)
-Sidebar.BackgroundColor3 = UI.Darker
-Sidebar.Parent = MainWindow
+-- 🔘 TOGGLE FUNCTION
+local function MakeToggle(y, label, stateKey)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(0.9, 0, 0, 42)
+    f.Position = UDim2.new(0.05, 0, 0, y)
+    f.BackgroundColor3 = UI.Gray
+    f.Parent = Panel
+    Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
 
-local SidebarLayout = Instance.new("UIListLayout")
-SidebarLayout.Padding = UDim.new(0, 4)
-SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-SidebarLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-SidebarLayout.PaddingTop = UDim.new(0, 8)
-SidebarLayout.Parent = Sidebar
+    local txt = Instance.new("TextLabel")
+    txt.Size = UDim2.new(0.7, 0, 1, 0)
+    txt.Position = UDim2.new(0, 12, 0, 0)
+    txt.BackgroundTransparency = 1
+    txt.Text = label
+    txt.Font = Enum.Font.GothamBold
+    txt.TextSize = 14
+    txt.TextColor3 = UI.White
+    txt.TextXAlignment = Enum.TextXAlignment.Left
+    txt.Parent = f
 
--- 📄 Content Area
-local ContentArea = Instance.new("Frame")
-ContentArea.Size = UDim2.new(1, -140, 1, -50)
-ContentArea.Position = UDim2.new(0, 140, 0, 50)
-ContentArea.BackgroundColor3 = UI.BG
-ContentArea.Parent = MainWindow
+    local tgl = Instance.new("TextButton")
+    tgl.Size = UDim2.new(0, 60, 0, 28)
+    tgl.Position = UDim2.new(1, -70, 0.5, -14)
+    tgl.BackgroundColor3 = State[stateKey] and UI.Green or UI.Red
+    tgl.Text = State[stateKey] and "ON" or "OFF"
+    tgl.Font = Enum.Font.GothamBold
+    tgl.TextSize = 12
+    tgl.TextColor3 = UI.White
+    tgl.Parent = f
+    Instance.new("UICorner", tgl).CornerRadius = UDim.new(0, 6)
 
--- ==========================================
--- 🧩 CREATE TAB BUTTONS
--- ==========================================
-local TabButtons = {}
-local TabNames = {"Farm", "Player", "Predictor", "Progress", "Server", "Misc"}
+    tgl.MouseButton1Click:Connect(function()
+        State[stateKey] = not State[stateKey]
+        tgl.BackgroundColor3 = State[stateKey] and UI.Green or UI.Red
+        tgl.Text = State[stateKey] and "ON" or "OFF"
+    end)
+    return tgl
+end
 
-for _, TabName in ipairs(TabNames) do
-    local TabBtn = Instance.new("TextButton")
-    TabBtn.Size = UDim2.new(0.9, 0, 0, 42)
-    TabBtn.BackgroundColor3 = UI.Button
-    TabBtn.Text = TabName
-    TabBtn.Font = Enum.Font.GothamBold
-    TabBtn.TextSize = 15
-    TabBtn.TextColor3 = UI.Text
-    TabBtn.Parent = Sidebar
-    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 8)
-    
-    TabButtons[TabName] = TabBtn
-    
-    TabBtn.MouseButton1Click:Connect(function()
-        State.ActiveTab = TabName
-        for Name, Btn in pairs(TabButtons) do
-            Btn.BackgroundColor3 = UI.Button
+-- 📋 CREATE TOGGLES
+MakeToggle(65, "🥚 ESP Eggs (បង្ហាញពង)", "ESP")
+MakeToggle(115, "🥚 Auto Steal (យកដោយស្វ័យ)", "AutoSteal")
+MakeToggle(165, "🐣 Instant Hatch (បើកពងភ្លាម)", "InstantHatch")
+MakeToggle(215, "⏱️ No Countdown (បិទម៉ោងរាប់)", "NoCountdown")
+MakeToggle(265, "🛡️ No Knockback (គេវ៉ៃអត់ដួល)", "NoKnockback")
+
+-- ⚡ SPEED CONTROLS
+local SpdLbl = Instance.new("TextLabel")
+SpdLbl.Size = UDim2.new(0.9, 0, 0, 30)
+SpdLbl.Position = UDim2.new(0.05, 0, 0, 315)
+SpdLbl.BackgroundTransparency = 1
+SpdLbl.Text = "⚡ ល្បឿនរត់: " .. State.Speed
+SpdLbl.Font = Enum.Font.GothamBold
+SpdLbl.TextSize = 14
+SpdLbl.TextColor3 = UI.Pink
+SpdLbl.TextXAlignment = Enum.TextXAlignment.Left
+SpdLbl.Parent = Panel
+
+local Speeds = {50, 100, 500, 1000, 2000}
+local SpdBtns = {}
+for i, spd in ipairs(Speeds) do
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0.17, -4, 0, 38)
+    b.Position = UDim2.new(0.05 + (i-1)*0.19, 0, 0, 350)
+    b.BackgroundColor3 = spd == State.Speed and UI.Green or UI.Gray
+    b.Text = tostring(spd)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 13
+    b.TextColor3 = UI.White
+    b.Parent = Panel
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
+    SpdBtns[spd] = b
+    b.MouseButton1Click:Connect(function()
+        State.Speed = spd
+        SpdLbl.Text = "⚡ ល្បឿនរត់: " .. spd
+        for s, btn in pairs(SpdBtns) do
+            btn.BackgroundColor3 = s == spd and UI.Green or UI.Gray
         end
-        TabBtn.BackgroundColor3 = UI.Primary
-        ShowTabContent(TabName)
     end)
 end
 
--- ==========================================
--- 📝 TAB CONTENT FUNCTIONS
--- ==========================================
-local TabContents = {}
+-- 🥚 EGG LIST
+local ListLbl = Instance.new("TextLabel")
+ListLbl.Size = UDim2.new(0.9, 0, 0, 28)
+ListLbl.Position = UDim2.new(0.05, 0, 0, 400)
+ListLbl.BackgroundTransparency = 1
+ListLbl.Text = "📋 បញ្ជីពង (ចុចយក)"
+ListLbl.Font = Enum.Font.GothamBold
+ListLbl.TextSize = 14
+ListLbl.TextColor3 = UI.White
+ListLbl.TextXAlignment = Enum.TextXAlignment.Left
+ListLbl.Parent = Panel
 
--- 🌾 FARM TAB (ESP Eggs + Auto Steal)
-local function CreateFarmTab()
-    local FarmTab = Instance.new("Frame")
-    FarmTab.Name = "FarmTab"
-    FarmTab.Size = UDim2.new(1, 0, 1, 0)
-    FarmTab.BackgroundTransparency = 1
-    FarmTab.Parent = ContentArea
-    
-    local SectionLayout = Instance.new("UIListLayout")
-    SectionLayout.Padding = UDim.new(0, 15)
-    SectionLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    SectionLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-    SectionLayout.PaddingTop = UDim.new(0, 15)
-    SectionLayout.Parent = FarmTab
-    
-    -- 🥚 ESP Eggs Section
-    local ESPSect = Instance.new("Frame")
-    ESPSect.Size = UDim2.new(0.95, 0, 0, 240)
-    ESPSect.BackgroundColor3 = UI.Gray
-    ESPSect.Parent = FarmTab
-    Instance.new("UICorner", ESPSect).CornerRadius = UDim.new(0, 10)
-    
-    local ESPTitle = Instance.new("TextLabel")
-    ESPTitle.Size = UDim2.new(1, -20, 0, 35)
-    ESPTitle.Position = UDim2.new(0, 10, 0, 5)
-    ESPTitle.BackgroundTransparency = 1
-    ESPTitle.Text = "🥚 ESP Eggs"
-    ESPTitle.Font = Enum.Font.GothamBold
-    ESPTitle.TextSize = 18
-    ESPTitle.TextColor3 = UI.Text
-    ESPTitle.TextXAlignment = Enum.TextXAlignment.Left
-    ESPTitle.Parent = ESPSect
-    
-    -- Toggle: ESP Enabled
-    local ESPEnable = CreateToggle(ESPSect, 20, 45, "បើក ESP Eggs", State.ESP_Enabled, function(v)
-        State.ESP_Enabled = v
-    end)
-    
-    -- Toggle: Fixed Size
-    local ESPFixed = CreateToggle(ESPSect, 20, 85, "ទំហំថេរ", State.ESP_FixedSize, function(v)
-        State.ESP_FixedSize = v
-    end)
-    
-    -- Toggle: Show Own Base
-    local ESPOwn = CreateToggle(ESPSect, 20, 125, "បង្ហាញពងក្នុងមូលដ្ឋាន", State.ESP_ShowOwnBase, function(v)
-        State.ESP_ShowOwnBase = v
-    end)
-    
-    -- Slider: ESP Min Rarity
-    local ESPRarity = CreateDropdown(ESPSect, 20, 165, "កម្រិតអប្បបរមា", RarityOrder[State.ESP_MinRarity].Name, {
-        "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"
-    }, function(v)
-        for i, R in ipairs(RarityOrder) do
-            if R.Name == v then State.ESP_MinRarity = i end
-        end
-    end)
-    
-    -- Slider: ESP Size
-    local ESPSize = CreateSlider(ESPSect, 20, 205, "ទំហំសញ្ញា", State.ESP_Size, 0, 100, function(v)
-        State.ESP_Size = math.floor(v)
-    end)
-    
-    -- 🥚 Auto Steal Section
-    local StealSect = Instance.new("Frame")
-    StealSect.Size = UDim2.new(0.95, 0, 0, 280)
-    StealSect.BackgroundColor3 = UI.Gray
-    StealSect.Parent = FarmTab
-    Instance.new("UICorner", StealSect).CornerRadius = UDim.new(0, 10)
-    
-    local StealTitle = Instance.new("TextLabel")
-    StealTitle.Size = UDim2.new(1, -20, 0, 35)
-    StealTitle.Position = UDim2.new(0, 10, 0, 5)
-    StealTitle.BackgroundTransparency = 1
-    StealTitle.Text = "🥚 Auto Steal"
-    StealTitle.Font = Enum.Font.GothamBold
-    StealTitle.TextSize = 18
-    StealTitle.TextColor3 = UI.Text
-    StealTitle.TextXAlignment = Enum.TextXAlignment.Left
-    StealTitle.Parent = StealSect
-    
-    -- Toggle: Auto Steal
-    local AutoStealToggle = CreateToggle(StealSect, 20, 45, "បើក Auto Steal", State.AutoSteal_Enabled, function(v)
-        State.AutoSteal_Enabled = v
-    end)
-    
-    -- Dropdown: Target Areas
-    local TargetAreas = CreateDropdown(StealSect, 20, 85, "តំបន់គោលដៅ", "តំបន់ទាំងអស់", {"តំបន់ទាំងអស់", "តំបន់ 1", "តំបន់ 2"}, function(v)
-        if v == "តំបន់ទាំងអស់" then State.AutoSteal_TargetAreas = 2
-        elseif v == "តំបន់ 1" then State.AutoSteal_TargetAreas = 1
-        else State.AutoSteal_TargetAreas = 2 end
-    end)
-    
-    -- Dropdown: Min Rarity
-    local StealMinRarity = CreateDropdown(StealSect, 20, 125, "កម្រិតអប្បបរមា", "Any", {"Any", "Common+", "Uncommon+", "Rare+", "Epic+", "Legendary+"}, function(v)
-        if v == "Any" then State.AutoSteal_MinRarity = 0
-        elseif v == "Common+" then State.AutoSteal_MinRarity = 1
-        elseif v == "Uncommon+" then State.AutoSteal_MinRarity = 2
-        elseif v == "Rare+" then State.AutoSteal_MinRarity = 3
-        elseif v == "Epic+" then State.AutoSteal_MinRarity = 4
-        else State.AutoSteal_MinRarity = 5 end
-    end)
-    
-    -- Dropdown: Min Value
-    local StealMinValue = CreateDropdown(StealSect, 20, 165, "តម្លៃអប្បបរមា", "1000M/s", {"0M/s", "100M/s", "500M/s", "1000M/s", "5000M/s"}, function(v)
-        State.AutoSteal_MinValue = tonumber(string.match(v, "%d+")) or 0
-    end)
-    
-    -- Toggle: Prioritize Rift
-    local PrioritizeRift = CreateToggle(StealSect, 20, 205, "អាទិភាព Rift Recipe", State.AutoSteal_PrioritizeRift, function(v)
-        State.AutoSteal_PrioritizeRift = v
-    end)
-    
-    -- Slider: Tween Speed
-    local TweenSpeedSlider = CreateSlider(StealSect, 20, 245, "ល្បឿនផ្លាស់ទី", State.TweenSpeed, 100, 5000, function(v)
-        State.TweenSpeed = math.floor(v)
-    end)
-    
-    TabContents.Farm = FarmTab
-    return FarmTab
-end
+local List = Instance.new("ScrollingFrame")
+List.Size = UDim2.new(0.9, 0, 0, 130)
+List.Position = UDim2.new(0.05, 0, 0, 425)
+List.BackgroundTransparency = 1
+List.ScrollBarThickness = 5
+List.CanvasSize = UDim2.new(0, 0, 0, #Eggs * 42)
+List.Parent = Panel
 
--- 📋 STEAL PANEL (Side Popup)
-local StealPanel = Instance.new("Frame")
-StealPanel.Name = "StealPanel"
-StealPanel.Size = UDim2.new(0, 320, 0, 450)
-StealPanel.Position = UDim2.new(1, -340, 0.5, -225)
-StealPanel.BackgroundColor3 = UI.BG
-StealPanel.BorderSizePixel = 2
-StealPanel.BorderColor3 = UI.Primary
-StealPanel.Visible = false
-StealPanel.Active = true
-StealPanel.Draggable = true
-StealPanel.Parent = ScreenGui
-Instance.new("UICorner", StealPanel).CornerRadius = UDim.new(0, 12)
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 6)
+Layout.Parent = List
 
--- Steal Panel Header
-local StealPanelHeader = Instance.new("Frame")
-StealPanelHeader.Size = UDim2.new(1, 0, 0, 45)
-StealPanelHeader.BackgroundColor3 = UI.Primary
-StealPanelHeader.Parent = StealPanel
+for _, egg in ipairs(Eggs) do
+    local item = Instance.new("Frame")
+    item.Size = UDim2.new(1, -5, 0, 36)
+    item.BackgroundColor3 = UI.Gray
+    item.Parent = List
+    Instance.new("UICorner", item).CornerRadius = UDim.new(0, 6)
 
-local StealPanelTitle = Instance.new("TextLabel")
-StealPanelTitle.Size = UDim2.new(1, -100, 1, 0)
-StealPanelTitle.Position = UDim2.new(0, 10, 0, 0)
-StealPanelTitle.BackgroundTransparency = 1
-StealPanelTitle.Text = "📋 បញ្ជីពង"
-StealPanelTitle.Font = Enum.Font.GothamBold
-StealPanelTitle.TextSize = 16
-StealPanelTitle.TextColor3 = UI.Text
-StealPanelTitle.TextXAlignment = Enum.TextXAlignment.Left
-StealPanelTitle.Parent = StealPanelHeader
+    local nm = Instance.new("TextLabel")
+    nm.Size = UDim2.new(0.55, 0, 1, 0)
+    nm.Position = UDim2.new(0, 10, 0, 0)
+    nm.BackgroundTransparency = 1
+    nm.Text = egg.Name
+    nm.Font = Enum.Font.GothamBold
+    nm.TextSize = 13
+    nm.TextColor3 = egg.Color
+    nm.TextXAlignment = Enum.TextXAlignment.Left
+    nm.Parent = item
 
-local SortBtn = Instance.new("TextButton")
-SortBtn.Size = UDim2.new(0, 100, 0, 35)
-SortBtn.Position = UDim2.new(1, -110, 0, 5)
-SortBtn.BackgroundColor3 = UI.Green
-SortBtn.Text = "តម្រៀប: តម្លៃ"
-SortBtn.Font = Enum.Font.GothamBold
-SortBtn.TextSize = 12
-SortBtn.TextColor3 = UI.Text
-SortBtn.Parent = StealPanelHeader
-Instance.new("UICorner", SortBtn).CornerRadius = UDim.new(0, 6)
+    local val = Instance.new("TextLabel")
+    val.Size = UDim2.new(0.25, 0, 1, 0)
+    val.Position = UDim2.new(0.55, 0, 0, 0)
+    val.BackgroundTransparency = 1
+    val.Text = "$" .. egg.Value
+    val.Font = Enum.Font.Gotham
+    val.TextSize = 11
+    val.TextColor3 = Color3.fromRGB(120, 255, 120)
+    val.Parent = item
 
--- Auto Steal Status
-local StealStatus = Instance.new("Frame")
-StealStatus.Size = UDim2.new(1, -20, 0, 35)
-StealStatus.Position = UDim2.new(0, 10, 0, 55)
-StealStatus.BackgroundColor3 = UI.Gray
-StealStatus.Parent = StealPanel
-Instance.new("UICorner", StealStatus).CornerRadius = UDim.new(0, 6)
+    local get = Instance.new("TextButton")
+    get.Size = UDim2.new(0.18, 0, 0, 28)
+    get.Position = UDim2.new(0.80, 0, 0.5, -14)
+    get.BackgroundColor3 = UI.Green
+    get.Text = "យក"
+    get.Font = Enum.Font.GothamBold
+    get.TextSize = 12
+    get.TextColor3 = UI.White
+    get.Parent = item
+    Instance.new("UICorner", get).CornerRadius = UDim.new(0, 5)
 
-local StealStatusText = Instance.new("TextLabel")
-StealStatusText.Size = UDim2.new(1, -10, 1, 0)
-StealStatusText.Position = UDim2.new(0, 10, 0, 0)
-StealStatusText.BackgroundTransparency = 1
-StealStatusText.Text = "🔴 Auto Steal: បិទ | ល្បឿន: 1000"
-StealStatusText.Font = Enum.Font.GothamBold
-StealStatusText.TextSize = 13
-StealStatusText.TextColor3 = UI.Text
-StealStatusText.TextXAlignment = Enum.TextXAlignment.Left
-StealStatusText.Parent = StealStatus
-
--- Egg List Container
-local EggListContainer = Instance.new("ScrollingFrame")
-EggListContainer.Size = UDim2.new(1, -20, 1, -110)
-EggListContainer.Position = UDim2.new(0, 10, 0, 100)
-EggListContainer.BackgroundTransparency = 1
-EggListContainer.CanvasSize = UDim2.new(0, 0, 0, #EggList * 50)
-EggListContainer.ScrollBarThickness = 6
-EggListContainer.Parent = StealPanel
-
-local EggListLayout = Instance.new("UIListLayout")
-EggListLayout.Padding = UDim.new(0, 8)
-EggListLayout.Parent = EggListContainer
-
--- Populate Egg List
-local function RefreshEggList()
-    for _, Child in ipairs(EggListContainer:GetChildren()) do
-        if Child:IsA("Frame") then Child:Destroy() end
-    end
-    
-    for _, Egg in ipairs(EggList) do
-        local EggItem = Instance.new("Frame")
-        EggItem.Size = UDim2.new(1, 0, 0, 45)
-        EggItem.BackgroundColor3 = UI.Gray
-        EggItem.Parent = EggListContainer
-        Instance.new("UICorner", EggItem).CornerRadius = UDim.new(0, 6)
-        
-        local EggIcon = Instance.new("TextLabel")
-        EggIcon.Size = UDim2.new(0, 35, 1, 0)
-        EggIcon.Position = UDim2.new(0, 5, 0, 0)
-        EggIcon.BackgroundTransparency = 1
-        EggIcon.Text = Egg.Icon
-        EggIcon.Font = Enum.Font.Gotham
-        EggIcon.TextSize = 20
-        EggIcon.Parent = EggItem
-        
-        local EggName = Instance.new("TextLabel")
-        EggName.Size = UDim2.new(0, 140, 1, 0)
-        EggName.Position = UDim2.new(0, 45, 0, 0)
-        EggName.BackgroundTransparency = 1
-        EggName.Text = Egg.Name
-        EggName.Font = Enum.Font.GothamBold
-        EggName.TextSize = 14
-        EggName.TextColor3 = RarityOrder[Egg.Rarity].Color
-        EggName.TextXAlignment = Enum.TextXAlignment.Left
-        EggName.Parent = EggItem
-        
-        local EggValue = Instance.new("TextLabel")
-        EggValue.Size = UDim2.new(0, 80, 1, 0)
-        EggValue.Position = UDim2.new(0, 180, 0, 0)
-        EggValue.BackgroundTransparency = 1
-        EggValue.Text = "$" .. Egg.Value .. Egg.Unit
-        EggValue.Font = Enum.Font.Gotham
-        EggValue.TextSize = 12
-        EggValue.TextColor3 = Color3.fromRGB(120, 255, 120)
-        EggValue.TextXAlignment = Enum.TextXAlignment.Right
-        EggValue.Parent = EggItem
-        
-        local StealBtn = Instance.new("TextButton")
-        StealBtn.Size = UDim2.new(0, 70, 0, 35)
-        StealBtn.Position = UDim2.new(1, -75, 0, 5)
-        StealBtn.BackgroundColor3 = UI.Green
-        StealBtn.Text = "យក"
-        StealBtn.Font = Enum.Font.GothamBold
-        StealBtn.TextSize = 13
-        StealBtn.TextColor3 = UI.Text
-        StealBtn.Parent = EggItem
-        Instance.new("UICorner", StealBtn).CornerRadius = UDim.new(0, 6)
-        
-        StealBtn.MouseButton1Click:Connect(function()
-            StealEggByName(Egg.Name)
+    get.MouseButton1Click:Connect(function()
+        get.Text = "ទៅ!"
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {Title="Jinghok Hub", Text="កំពុងទៅយក "..egg.Name, Duration=2})
         end)
-    end
-end
-
--- 🧩 HELPER FUNCTIONS: Create Toggle, Dropdown, Slider
-function CreateToggle(Parent, X, Y, Label, Default, Callback)
-    local Container = Instance.new("Frame")
-    Container.Size = UDim2.new(1, -40, 0, 35)
-    Container.Position = UDim2.new(0, X, 0, Y)
-    Container.BackgroundTransparency = 1
-    Container.Parent = Parent
-    
-    local Text = Instance.new("TextLabel")
-    Text.Size = UDim2.new(0.8, 0, 1, 0)
-    Text.BackgroundTransparency = 1
-    Text.Text = Label
-    Text.Font = Enum.Font.Gotham
-    Text.TextSize = 14
-    Text.TextColor3 = UI.Text
-    Text.TextXAlignment = Enum.TextXAlignment.Left
-    Text.Parent = Container
-    
-    local Toggle = Instance.new("TextButton")
-    Toggle.Size = UDim2.new(0, 40, 0, 24)
-    Toggle.Position = UDim2.new(1, -45, 0.5, -12)
-    Toggle.BackgroundColor3 = Default and UI.Green or UI.Red
-    Toggle.Text = Default and "ON" or "OFF"
-    Toggle.Font = Enum.Font.GothamBold
-    Toggle.TextSize = 11
-    Toggle.TextColor3 = UI.Text
-    Toggle.Parent = Container
-    Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 6)
-    
-    Toggle.MouseButton1Click:Connect(function()
-        Default = not Default
-        Toggle.BackgroundColor3 = Default and UI.Green or UI.Red
-        Toggle.Text = Default and "ON" or "OFF"
-        Callback(Default)
+        task.delay(1.5, function() get.Text = "យក" end)
     end)
-    
-    return Container
 end
 
-function CreateDropdown(Parent, X, Y, Label, Default, Options, Callback)
-    local Container = Instance.new("Frame")
-    Container.Size = UDim2.new(1, -40, 0, 35)
-    Container.Position = UDim2.new(0, X, 0, Y)
-    Container.BackgroundTransparency = 1
-    Container.Parent = Parent
-    
-    local Text = Instance.new("TextLabel")
-    Text.Size = UDim2.new(0.5, 0, 1, 0)
-    Text.BackgroundTransparency = 1
-    Text.Text = Label
-    Text.Font = Enum.Font.Gotham
-    Text.TextSize = 14
-    Text.TextColor3 = UI.Text
-    Text.TextXAlignment = Enum.TextXAlignment.Left
-    Text.Parent = Container
-    
-    local DropBtn = Instance.new("TextButton")
-    DropBtn.Size = UDim2.new(0.45, 0, 0, 30)
-    DropBtn.Position = UDim2.new(0.55, 0, 0.5, -15)
-    DropBtn.BackgroundColor3 = UI.Darker
-    DropBtn.Text = Default
-    DropBtn.Font = Enum.Font.Gotham
-    DropBtn.TextSize = 11
-    DropBtn.TextColor3 = UI.Text
-    DropBtn.Parent = Container
-    Instance.new("UICorner", DropBtn).CornerRadius = UDim.new(0, 6)
-    
-    local Open = false
-    DropBtn.MouseButton1Click:Connect(function()
-        Open = not Open
-        if Open then
-            ShowDropdownList(DropBtn, Options, function(Choice)
-                DropBtn.Text = Choice
-                Callback(Choice)
-                Open = false
-            end)
-        end
-    end)
-    
-    return Container
+-- 🎯 TOGGLE MENU OPEN/CLOSE
+local function ToggleMenu()
+    State.Open = not State.Open
+    Panel.Visible = State.Open
 end
 
-function CreateSlider(Parent, X, Y, Label, Default, Min, Max, Callback)
-    local Container = Instance.new("Frame")
-    Container.Size = UDim2.new(1, -40, 0, 45)
-    Container.Position = UDim2.new(0, X, 0, Y)
-    Container.BackgroundTransparency = 1
-    Container.Parent = Parent
-    
-    local Text = Instance.new("TextLabel")
-    Text.Size = UDim2.new(1, 0, 0, 20)
-    Text.BackgroundTransparency = 1
-    Text.Text = Label .. ": " .. Default
-    Text.Font = Enum.Font.Gotham
-    Text.TextSize = 14
-    Text.TextColor3 = UI.Text
-    Text.TextXAlignment = Enum.TextXAlignment.Left
-    Text.Parent = Container
-    
-    local BarBg = Instance.new("Frame")
-    BarBg.Size = UDim2.new(1, 0, 0, 12)
-    BarBg.Position = UDim2.new(0, 0, 0, 28)
-    BarBg.BackgroundColor3 = UI.Darker
-    BarBg.Parent = Container
-    Instance.new("UICorner", BarBg).CornerRadius = UDim.new(0, 6)
-    
-    local BarFill = Instance.new("Frame")
-    BarFill.Size = UDim2.new((Default - Min) / (Max - Min), 0, 1, 0)
-    BarFill.BackgroundColor3 = UI.Primary
-    BarFill.Parent = BarBg
-    Instance.new("UICorner", BarFill).CornerRadius = UDim.new(0, 6)
-    
-    return Container
-end
-
-function ShowDropdownList(Parent, Options, Callback)
-    local List = Instance.new("Frame")
-    List.Size = UDim2.new(Parent.Size.Width.Scale, Parent.Size.Width.Offset, 0, #Options * 30)
-    List.Position = UDim2.new(Parent.Position.X.Scale, Parent.Position.X.Offset, 1, 5)
-    List.BackgroundColor3 = UI.Darker
-    List.ZIndex = 100
-    List.Parent = Parent.Parent
-    Instance.new("UICorner", List).CornerRadius = UDim.new(0, 6)
-    
-    local Layout = Instance.new("UIListLayout")
-    Layout.Padding = UDim.new(0, 2)
-    Layout.Parent = List
-    
-    for _, Opt in ipairs(Options) do
-        local Item = Instance.new("TextButton")
-        Item.Size = UDim2.new(1, -4, 0, 28)
-        Item.BackgroundColor3 = UI.Gray
-        Item.Text = Opt
-        Item.Font = Enum.Font.Gotham
-        Item.TextSize = 11
-        Item.TextColor3 = UI.Text
-        Item.Parent = List
-        Instance.new("UICorner", Item).CornerRadius = UDim.new(0, 4)
-        
-        Item.MouseButton1Click:Connect(function()
-            Callback(Opt)
-            List:Destroy()
-        end)
-    end
-    
-    delay(3, function() if List then List:Destroy() end end)
-end
-
--- ==========================================
--- 🔄 TAB MANAGEMENT
--- ==========================================
-function ShowTabContent(TabName)
-    for _, Child in ipairs(ContentArea:GetChildren()) do
-        if Child:IsA("Frame") then Child:Destroy() end
-    end
-    
-    if TabName == "Farm" then
-        CreateFarmTab()
-    else
-        local Placeholder = Instance.new("TextLabel")
-        Placeholder.Size = UDim2.new(1, 0, 1, 0)
-        Placeholder.BackgroundTransparency = 1
-        Placeholder.Text = "📁 " .. TabName .. "\n\nមិនទាន់មានមុខងារនៅឡើយ\n\nសូមរង់ចាំអាប់ដេតបន្ទាប់!"
-        Placeholder.Font = Enum.Font.GothamBold
-        Placeholder.TextSize = 24
-        Placeholder.TextColor3 = UI.Text
-        Placeholder.TextWrapped = true
-        Placeholder.Parent = ContentArea
-    end
-end
-
--- ==========================================
--- 🥚 STEAL FUNCTION
--- ==========================================
-function StealEggByName(EggName)
-    local Now = os.clock()
-    if Now - State.LastStealTime < State.StealCooldown then return end
-    State.LastStealTime = Now
-    
-    print("🥚 កំពុងយកពង: " .. EggName)
-    SendNotification("ជោគជ័យ", "បានយកពង: " .. EggName, 3)
-end
-
--- ==========================================
--- 🔔 NOTIFICATION
--- ==========================================
-function SendNotification(Title, Msg, Dur)
+-- ❎ CLOSE ALL FUNCTION
+local function CloseAll()
+    State.Open = false
+    Panel.Visible = false
+    State.ESP = false
+    State.AutoSteal = false
+    State.InstantHatch = false
+    State.NoCountdown = false
     pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = Title,
-            Text = Msg,
-            Duration = Dur or 3
-        })
+        StarterGui:SetCore("SendNotification", {Title="❎ បិទទាំងអស់", Text="មុខងារទាំងអស់បានបិទ!", Duration=2})
     end)
+    print("❎ ALL CLOSED")
 end
 
--- ==========================================
--- 🎯 MAIN TOGGLE: Open/Close Hub
--- ==========================================
-FloatingBtn.MouseButton1Click:Connect(function()
-    State.HubOpen = not State.HubOpen
-    MainWindow.Visible = State.HubOpen
-    if State.HubOpen then
-        ShowTabContent("Farm")
-        TabButtons["Farm"].BackgroundColor3 = UI.Primary
+-- 🖱️ CONNECT BUTTONS
+JH_BTN.MouseButton1Click:Connect(ToggleMenu)
+ClosePanelBtn.MouseButton1Click:Connect(ToggleMenu)
+CLOSE_ALL_BTN.MouseButton1Click:Connect(CloseAll)
+
+-- ⌨️ KEYBOARD SHORTCUTS
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        ToggleMenu()
+    end
+    if input.KeyCode == Enum.KeyCode.Delete then
+        CloseAll()
     end
 end)
 
-CloseBtn.MouseButton1Click:Connect(function()
-    State.HubOpen = false
-    MainWindow.Visible = false
-end)
-
--- 📋 Toggle Steal Panel
-local ShowStealPanel = Instance.new("TextButton")
-ShowStealPanel.Size = UDim2.new(0, 45, 0, 45)
-ShowStealPanel.Position = UDim2.new(1, -105, 1, -75)
-ShowStealPanel.BackgroundColor3 = UI.Button
-ShowStealPanel.Text = "📋"
-ShowStealPanel.Font = Enum.Font.GothamBold
-ShowStealPanel.TextSize = 20
-ShowStealPanel.TextColor3 = UI.Text
-ShowStealPanel.Active = true
-ShowStealPanel.Draggable = true
-ShowStealPanel.Parent = ScreenGui
-Instance.new("UICorner", ShowStealPanel).CornerRadius = UDim.new(0, 10)
-
-ShowStealPanel.MouseButton1Click:Connect(function()
-    StealPanel.Visible = not StealPanel.Visible
-    if StealPanel.Visible then
-        RefreshEggList()
+-- 🛡️ SAFETY LOOPS
+game:GetService("RunService").Stepped:Connect(function()
+    if State.NoKnockback and Player.Character then
+        local root = Player.Character:FindFirstChild("HumanoidRootPart")
+        if root then root.Velocity = Vector3.new(root.Velocity.X * 0.05, root.Velocity.Y, root.Velocity.Z * 0.05) end
+        local hum = Player.Character:FindFirstChild("Humanoid")
+        if hum then hum.MaxHealth = math.huge; hum.Health = math.huge end
+    end
+    if State.NoCountdown or State.InstantHatch then
+        for _, v in pairs(WS:GetDescendants()) do
+            if v:IsA("NumberValue") or v:IsA("IntValue") then
+                local n = string.lower(v.Name)
+                if string.find(n, "countdown") or string.find(n, "timer") or string.find(n, "time") or string.find(n, "hatch") then
+                    v.Value = 0
+                end
+            end
+        end
     end
 end)
 
--- 🚀 INITIALIZE
-task.spawn(function()
-    task.wait(1)
-    RefreshEggList()
-    print("✅ JINGHOK HUB ដំណើរការបានជោគជ័យ!")
-    print("👉 ចុចប៊ូតុង JH ពណ៌ផ្កាឈូក នៅជ្រុងក្រោមស្តាំ ដើម្បីបើកម៉ឺនុយ")
-    SendNotification("JINGHOK HUB", "បើកដំណើរការដោយជោគជ័យ! ✅", 4)
+-- ✅ READY NOTIFICATION
+pcall(function()
+    StarterGui:SetCore("SendNotification", {Title="💖 JINGHOK HUB", Text="✅ រួចរាល់! JH=បើក  ❎=បិទទាំងអស់", Duration=4})
 end)
+print("💖 JINGHOK HUB READY! | JH = Open Menu | ❎ = Close All | Delete Key = Close All")
