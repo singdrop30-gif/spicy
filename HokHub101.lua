@@ -1,12 +1,13 @@
 -- ==========================================
 -- 💖 JINGHOK HUB | STEAL AN EGG
--- ✅ ប៊ូតុងបិទ/បើកល្បឿន! ON=ខៀវ | OFF=ក្រហម! OFF=ដើរធម្មតា!
+-- ✅ គេវៃអត់បាន! + ប៊ូតុង ON=ខៀវ | OFF=ក្រហម! OFF=ដើរធម្មតា!
 -- ==========================================
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
 local Player = Players.LocalPlayer
 local Gui = Player:WaitForChild("PlayerGui")
 
@@ -24,10 +25,12 @@ local UI = {
 -- 📦 State
 local State = {
     Open = false,
-    OriginalSpeed = 16,    -- ល្បឿនដើមពិត
-    SpeedBoostOn = false,  -- បិទ/បើកល្បឿន
-    SelectedMultiplier = 2, -- គុណដែលបានជ្រើសរើស
-    NoKnockback = false
+    OriginalSpeed = 16,        -- ល្បឿនដើមពិត
+    SpeedBoostOn = false,      -- បិទ/បើកល្បឿន
+    SelectedMultiplier = 2,     -- គុណល្បឿន
+    NoKnockback = false,        -- គេរុញអត់បាន
+    NoDamage = false,           -- គេវៃអត់បាន
+    NoHitWhenStealing = false   -- យកពងគេវៃអត់បាន
 }
 
 -- 🖥️ ScreenGui
@@ -56,8 +59,8 @@ JH_Glow.Thickness = 2
 
 -- 📦 MAIN PANEL
 local Panel = Instance.new("Frame")
-Panel.Size = UDim2.new(0, 340, 0, 380)
-Panel.Position = UDim2.new(0.5, -170, 0.5, -190)
+Panel.Size = UDim2.new(0, 340, 0, 520)
+Panel.Position = UDim2.new(0.5, -170, 0.5, -260)
 Panel.BackgroundColor3 = UI.BG
 Panel.Visible = false
 Panel.Active = true
@@ -94,6 +97,50 @@ ClosePanelBtn.TextSize = 20
 ClosePanelBtn.TextColor3 = UI.White
 ClosePanelBtn.Parent = Header
 
+-- 🧩 Helper: បង្កើតប៊ូតុងបិទ/បើក
+local function CreateToggle(yPos, icon, label, stateKey)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0.9, 0, 0, 50)
+    Frame.Position = UDim2.new(0.05, 0, 0, yPos)
+    Frame.BackgroundColor3 = UI.Gray
+    Frame.Parent = Panel
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.7, 0, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = icon .. " " .. label
+    Label.Font = Enum.Font.GothamBold
+    Label.TextSize = 14
+    Label.TextColor3 = UI.White
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Frame
+
+    local Toggle = Instance.new("TextButton")
+    Toggle.Size = UDim2.new(0, 60, 0, 30)
+    Toggle.Position = UDim2.new(1, -72, 0.5, -15)
+    Toggle.BackgroundColor3 = UI.Red
+    Toggle.Text = "OFF"
+    Toggle.Font = Enum.Font.GothamBold
+    Toggle.TextSize = 12
+    Toggle.TextColor3 = UI.White
+    Toggle.Parent = Frame
+    Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 6)
+
+    Toggle.MouseButton1Click:Connect(function()
+        State[stateKey] = not State[stateKey]
+        Toggle.BackgroundColor3 = State[stateKey] and UI.Blue or UI.Red  -- ON=ខៀវ | OFF=ក្រហម
+        Toggle.Text = State[stateKey] and "ON" or "OFF"
+        local msg = State[stateKey] and "បើកហើយ!" or "បិទហើយ!"
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {Title=icon .. " " .. label, Text=msg, Duration=1.5})
+        end)
+    end)
+
+    return Toggle
+end
+
 -- ⚡ ប៊ូតុងបិទ/បើកល្បឿនធំ
 local SpeedMainFrame = Instance.new("Frame")
 SpeedMainFrame.Size = UDim2.new(0.9, 0, 0, 60)
@@ -113,7 +160,6 @@ SpeedMainLabel.TextColor3 = UI.White
 SpeedMainLabel.TextXAlignment = Enum.TextXAlignment.Left
 SpeedMainLabel.Parent = SpeedMainFrame
 
--- 🟢🔴 ប៊ូតុងបិទ/បើកល្បឿន
 local SpeedMainToggle = Instance.new("TextButton")
 SpeedMainToggle.Size = UDim2.new(0, 110, 0, 45)
 SpeedMainToggle.Position = UDim2.new(1, -125, 0.5, -22)
@@ -147,7 +193,7 @@ local MultHeader = Instance.new("TextLabel")
 MultHeader.Size = UDim2.new(0.9, 0, 0, 25)
 MultHeader.Position = UDim2.new(0.05, 0, 0, 145)
 MultHeader.BackgroundTransparency = 1
-MultHeader.Text = "🎯 ជ្រើសរើសគុណ"
+MultHeader.Text = "🎯 ជ្រើសរើសគុណល្បឿន"
 MultHeader.Font = Enum.Font.GothamBold
 MultHeader.TextSize = 13
 MultHeader.TextColor3 = UI.White
@@ -181,41 +227,45 @@ for i, mult in ipairs(Multipliers) do
     end)
 end
 
--- 🛡️ No Knockback
-local NKFrame = Instance.new("Frame")
-NKFrame.Size = UDim2.new(0.9, 0, 0, 50)
-NKFrame.Position = UDim2.new(0.05, 0, 0, 280)
-NKFrame.BackgroundColor3 = UI.Gray
-NKFrame.Parent = Panel
-Instance.new("UICorner", NKFrame).CornerRadius = UDim.new(0, 8)
+-- 📋 មុខងារការពារ
+local Toggles = {
+    NoDamage = CreateToggle(290, "🛡️", "គេវៃយើងអត់បាន", "NoDamage"),
+    NoHitWhenStealing = CreateToggle(350, "🥚", "យកពងគេវៃអត់បាន", "NoHitWhenStealing"),
+    NoKnockback = CreateToggle(410, "💨", "គេរុញយើងអត់បាន", "NoKnockback"),
+}
 
-local NKLabel = Instance.new("TextLabel")
-NKLabel.Size = UDim2.new(0.7, 0, 1, 0)
-NKLabel.Position = UDim2.new(0, 12, 0, 0)
-NKLabel.BackgroundTransparency = 1
-NKLabel.Text = "🛡️ No Knockback (គេមិនអាចរុញបាន)"
-NKLabel.Font = Enum.Font.GothamBold
-NKLabel.TextSize = 14
-NKLabel.TextColor3 = UI.White
-NKLabel.TextXAlignment = Enum.TextXAlignment.Left
-NKLabel.Parent = NKFrame
+-- 🛡️ រារាំងការខូចខាត & ការវាយ
+local function SetupProtection()
+    if Player.Character then
+        local Hum = Player.Character:FindFirstChild("Humanoid")
+        local Root = Player.Character:FindFirstChild("HumanoidRootPart")
+        if not Root then return end
 
-local NKToggle = Instance.new("TextButton")
-NKToggle.Size = UDim2.new(0, 60, 0, 30)
-NKToggle.Position = UDim2.new(1, -72, 0.5, -15)
-NKToggle.BackgroundColor3 = UI.Red
-NKToggle.Text = "OFF"
-NKToggle.Font = Enum.Font.GothamBold
-NKToggle.TextSize = 12
-NKToggle.TextColor3 = UI.White
-NKToggle.Parent = NKFrame
-Instance.new("UICorner", NKToggle).CornerRadius = UDim.new(0, 6)
-
-NKToggle.MouseButton1Click:Connect(function()
-    State.NoKnockback = not State.NoKnockback
-    NKToggle.BackgroundColor3 = State.NoKnockback and UI.Green or UI.Red
-    NKToggle.Text = State.NoKnockback and "ON" or "OFF"
-end)
+        -- រារាំងការខូចខាតទាំងអស់
+        if State.NoDamage or State.NoHitWhenStealing then
+            -- ការពារ HP
+            if Hum then
+                Hum.MaxHealth = math.huge
+                Hum.Health = math.huge
+            end
+            
+            -- រារាំង Touch/Projectile/Weapon ទាំងអស់
+            for _, part in pairs(Player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanTouch = false
+                    part.CollisionGroup = "Players"
+                end
+            end
+            
+            -- រារាំងការវាយពីអ្នកដទៃ
+            Root.Touched:Connect(function(hit)
+                if State.NoDamage or State.NoHitWhenStealing then
+                    return false  -- បដិសេធការប៉ះទាំងអស់
+                end
+            end)
+        end
+    end
+end
 
 -- 🎯 បើក/បិទម៉ឺនុយ
 local function ToggleMenu()
@@ -248,20 +298,28 @@ RunService.Heartbeat:Connect(function()
             else
                 Hum.WalkSpeed = State.OriginalSpeed
             end
-        end
-    end
 
-    -- 🛡️ No Knockback
-    if State.NoKnockback and Player.Character then
-        local Hum = Player.Character:FindFirstChild("Humanoid")
-        if Hum then
-            Hum:SetStateEnabled(Enum.HumanoidStateType.KnockedBack, false)
+            -- 💨 No Knockback
+            if State.NoKnockback then
+                Hum:SetStateEnabled(Enum.HumanoidStateType.KnockedBack, false)
+            else
+                Hum:SetStateEnabled(Enum.HumanoidStateType.KnockedBack, true)
+            end
+
+            -- 🛡️ No Damage
+            if State.NoDamage or State.NoHitWhenStealing then
+                Hum.MaxHealth = math.huge
+                Hum.Health = math.huge
+            end
         end
+
+        -- 🛡️ ការពារការប៉ះ/វាយ
+        SetupProtection()
     end
 end)
 
 -- ✅ រួចរាល់
 pcall(function()
-    StarterGui:SetCore("SendNotification", {Title="💖 JINGHOK HUB", Text="✅ ប៊ូតុង ON=ខៀវ | OFF=ក្រហម! OFF=ដើរធម្មតា!", Duration=3})
+    StarterGui:SetCore("SendNotification", {Title="💖 JINGHOK HUB", Text="✅ គេវៃអត់បាន! + យកពងគេវៃអត់បាន! + ON=ខៀវ OFF=ក្រហម!", Duration=3})
 end)
-print("💖 JINGHOK HUB | READY | ON=ខៀវ | OFF=ក្រហម! OFF=ដើរធម្មតា!")
+print("💖 JINGHOK HUB | READY | គេវៃអត់បាន! + យកពងគេវៃអត់បាន!")
